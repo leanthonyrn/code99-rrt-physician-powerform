@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<!--
+  @file        index.html (Code99_RRT_Physician_PowerForm_POC_v0.1)
+  @version     0.1.0 (Proof of Concept)
+  @description Physician post-event documentation for Code 99 and Rapid Response (RRT), built as two
+               Oracle Health PowerForms that share one set of fields. Implements the committee-confirmed
+               design (sections 2-4): 13 shared fields, 7 Code 99 fields, 5 RRT fields. Physician
+               decisions only; times, medications, shocks, vital signs, roles and debrief stay on the
+               Resuscitation Record, RRT Documentation Flow Sheet, iView and the Debrief form.
+               Aligned to SJMC Code 99 and Rapid Response policy (rev. 09/2026).
+  @author      LeAnthony Mathews, RN, MBA-IT, MS-I, CPHIMS
+  @contact     leanthonyrn@gmail.com
+  @created     2026-11-13
+  @expires     2027-05-31
+  @framework   LeAnthony Mathews Informatics Build Framework v1.0
+  @license     MIT
+  @disclaimer  Design proof of concept only. Not validated, not a medical record. Pending committee
+               approval, medical staff review and Oracle Health build feasibility.
+               Views are my own and not those of my employer.
+  @tech        Vanilla JS ES2022, no dependencies. No storage, no network I/O. No PHI.
+  @sideEffects DOM only. Clipboard write on Copy.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code 99 RRT Physician Forms</title>
+<style>
+:root{--font:Tahoma,"Segoe UI",Arial,sans-serif;--fs:11px;--fs-sm:10px;--fs-xs:9px;--fs-hdr:13px;--bg-app:#dfe5ec;--bg-panel:#fff;--bg-side:#eef2f6;--bg-strip:#f3f6fa;--blue:#3399ff;--blue-dk:#2b85d3;--bdr:#9aa6b2;--bdr-lt:#c3ccd6;--txt:#000;--muted:#4a4a4a;--red:#cc0000;--green:#006600;--green-lt:#e8f5e9;--amber:#fff8e1;--amber-b:#f0a000;--orange:#b35000;--teal:#006d6d;--teal-lt:#e0f4f4;--purple:#6a1b9a;--req:#ffffcc;--miss:#fff0f0;--phi-bar:34px}
+html,body{height:100%;margin:0;font-family:var(--font);font-size:var(--fs);color:var(--txt);background:var(--bg-app)}
+*{box-sizing:border-box}
+body{padding-top:var(--phi-bar)}
+.shell{padding:6px;height:calc(100% - var(--phi-bar))}
+.win{display:flex;flex-direction:column;border:1px solid var(--bdr);background:var(--bg-panel);height:100%;overflow:hidden;position:relative}
+.hidden{display:none!important}
+
+/* PHI Banner */
+.phi-banner{position:fixed;top:0;left:0;right:0;height:var(--phi-bar);background:var(--purple);color:#fff;font-size:var(--fs-xs);font-weight:bold;padding:0 12px;text-align:center;z-index:500;display:flex;align-items:center;justify-content:center;letter-spacing:.04em;gap:16px}
+.phi-banner__main{font-size:var(--fs-sm)}.phi-banner__note{font-weight:normal;opacity:.88}
+
+/* Expiry */
+.expiry-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:600;display:none;align-items:center;justify-content:center}
+.expiry-overlay--open{display:flex}
+.expiry-box{background:#fff;max-width:520px;width:94%;border:3px solid var(--red);padding:28px 32px;text-align:center}
+.expiry-box__icon{font-size:40px;margin-bottom:10px}.expiry-box__title{font-size:16px;font-weight:bold;color:var(--red);margin-bottom:8px}
+.expiry-box__body{font-size:var(--fs-sm);line-height:1.7;color:var(--muted);margin-bottom:14px}.expiry-box__contact{font-size:13px;font-weight:bold;color:var(--blue-dk)}
+.expiry-warn-bar{background:#fff3cd;border:1px solid #ffc107;border-left:4px solid #ff8800;padding:6px 12px;font-size:var(--fs-sm);display:none;flex-shrink:0}
+.expiry-warn-bar--show{display:flex;justify-content:space-between;align-items:center}
+.expiry-warn-bar__dismiss{cursor:pointer;font-size:16px;color:var(--muted);background:none;border:none}
+
+/* Buttons */
+.btn{padding:3px 10px;border:1px solid var(--bdr);background:#f5f5f5;font:inherit;font-size:var(--fs);font-weight:bold;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#e0e0e0}.btn--primary{background:var(--blue);color:#fff;border-color:var(--blue-dk)}.btn--primary:hover{background:var(--blue-dk)}
+.btn--success{background:#2e7d32;color:#fff;border-color:#1b5e20}.btn--success:hover{background:#1b5e20}
+.btn--danger{background:var(--red);color:#fff;border-color:#9a0000}.btn--sm{padding:2px 7px;font-size:var(--fs-sm)}
+
+/* Toolbar */
+.toolbar{display:flex;gap:5px;align-items:center;padding:4px 8px;background:var(--bg-strip);border-bottom:1px solid var(--bdr);flex-shrink:0;flex-wrap:wrap}
+.toolbar__value{padding:2px 6px;background:#fff;border:1px solid var(--bdr-lt);font-size:var(--fs-sm);font-weight:bold}
+.toolbar__actions{margin-left:auto;display:flex;gap:5px;flex-wrap:wrap}
+
+/* Layout */
+.main{display:flex;flex:1;overflow:hidden}
+.nav{width:190px;border-right:1px solid var(--bdr);background:var(--bg-side);overflow-y:auto;flex-shrink:0}
+.content{flex:1;overflow-y:auto;padding:8px}
+.page{display:none}.page--active{display:block}
+.nav__heading{padding:4px 8px;font-weight:bold;font-size:var(--fs-xs);color:var(--muted);background:#e2e8ef;border-bottom:1px solid var(--bdr-lt);text-transform:uppercase;letter-spacing:.04em}
+.nav__item{padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--bdr-lt);font-size:var(--fs-sm);user-select:none;display:flex;align-items:center;gap:4px}
+.nav__item:hover:not(.nav__item--locked){background:#dde3ea}
+.nav__item--active{background:var(--blue);color:#fff;font-weight:bold}
+.nav__item--locked{color:#bbb;cursor:default;background:#f5f5f5}
+.nav__arrow{color:var(--red);font-weight:bold;font-size:12px;flex-shrink:0}
+.nav__check{color:var(--green);font-weight:bold;font-size:13px;flex-shrink:0;display:none}
+.nav__item--done .nav__arrow{display:none}.nav__item--done .nav__check{display:inline}
+.nav__item--pending .nav__arrow{color:var(--amber-b)!important}
+.nav__item--active .nav__arrow{color:#ffcccc}.nav__item--locked .nav__arrow{display:none}
+.nav__ct{margin-left:auto;font-size:var(--fs-xs);background:var(--red);color:#fff;border-radius:8px;padding:0 5px}
+.nav__item--done .nav__ct,.nav__item--locked .nav__ct{display:none}
+
+/* Landing */
+.landing-overlay{position:absolute;inset:0;background:#fff;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.landing__inner{max-width:880px;width:100%;text-align:center}
+.landing__brand{font-size:var(--fs-xs);color:var(--purple);font-weight:bold;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.landing__title{font-size:16px;font-weight:bold;color:var(--blue-dk);margin-bottom:2px}
+.landing__subtitle{font-size:var(--fs-sm);color:var(--muted);margin-bottom:14px}
+.landing__cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:left;margin-bottom:10px}
+.landing__footer{font-size:var(--fs-xs);color:var(--muted);line-height:1.8}
+button.lc{-webkit-appearance:none;appearance:none;text-align:left;font:inherit;cursor:pointer;border:2px solid var(--bdr);padding:14px;background:#fafbfc;width:100%}
+button.lc:hover{border-color:var(--blue);background:#f0f6ff}
+.lc__icon{font-size:26px;margin-bottom:6px}.lc__title{font-weight:bold;font-size:var(--fs-hdr);color:var(--blue-dk);margin-bottom:5px}
+.lc__desc{font-size:var(--fs-sm);color:var(--muted);line-height:1.55;margin-bottom:10px;min-height:58px}
+.lc__cta{display:block;padding:3px 10px;background:var(--blue);color:#fff;border:1px solid var(--blue-dk);font-weight:bold;font-size:var(--fs);text-align:center}
+.lc--plain .lc__cta{background:#f5f5f5;color:var(--txt);border-color:var(--bdr)}
+.lc--rrt{border-color:var(--teal)}.lc--rrt:hover{border-color:#004f4f;background:#f0fafa}
+.lc--rrt .lc__cta{background:var(--teal);border-color:#004f4f}.lc--rrt .lc__title{color:var(--teal)}
+
+/* Section headers */
+.section-hdr{background:var(--blue);color:#fff;font-size:var(--fs-hdr);font-weight:bold;padding:5px 9px;border:1px solid var(--blue-dk);margin-bottom:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.section-hdr--success{background:#2e7d32!important;border-color:#1b5e20!important}
+.section-hdr--rrt{background:var(--teal)!important;border-color:#005050!important}
+.section-hdr__badge{background:rgba(255,255,255,.22);padding:1px 8px;border-radius:10px;font-size:var(--fs-sm);font-weight:normal}
+
+/* Boxes & Banners */
+.box{border:1px solid var(--bdr);padding:7px 8px;margin-bottom:7px;background:#fff}
+.box__title{font-weight:bold;margin-bottom:6px;font-size:var(--fs-sm);color:var(--blue-dk);text-transform:uppercase;letter-spacing:.03em}
+.banner{padding:5px 9px;margin-bottom:7px;font-size:var(--fs-sm);border:1px solid;border-left-width:4px;line-height:1.5}
+.banner--info{background:var(--amber);border-color:#f0c040;border-left-color:var(--amber-b)}
+.banner--ok{background:var(--green-lt);border-color:#66bb6a;border-left-color:#2e7d32}
+.banner--warn{background:#fff3cd;border-color:#ffc107;border-left-color:#ff8800}
+.banner--danger{background:#fff0f0;border-color:#e09090;border-left-color:var(--red)}
+.banner--teal{background:var(--teal-lt);border-color:#80cccc;border-left-color:var(--teal)}
+.banner--privacy{background:#f8f0ff;border-color:#ce93d8;border-left-color:var(--purple)}
+.banner .btn{margin-left:8px}
+
+/* Fields */
+.fld{margin-bottom:9px;padding:4px 5px;border:1px solid transparent}
+.fld:last-child{margin-bottom:2px}
+.fld__lbl{display:flex;align-items:center;gap:5px;font-size:var(--fs-sm);font-weight:bold;margin-bottom:3px;flex-wrap:wrap}
+.fld__id{font-size:8px;font-weight:bold;color:#fff;background:#7a8794;border-radius:2px;padding:1px 4px;letter-spacing:.03em}
+.fld__req{color:var(--red)}
+.fld__opt{color:var(--muted);font-weight:normal;font-size:var(--fs-xs)}
+.fld__hint{font-size:var(--fs-xs);color:var(--muted);margin-top:3px;font-style:italic;line-height:1.45}
+.fld--empty .opt-row,.fld--empty .chk-grid,.fld--empty .inp,.fld--empty .ta{background:var(--req)}
+.fld--missing{border-color:#e09090;background:var(--miss)}
+.opt-row{display:flex;flex-wrap:wrap;gap:5px;padding:3px}
+.opt{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-sm);cursor:pointer;padding:4px 9px;border:1px solid var(--bdr-lt);background:#fff;user-select:none}
+.opt:hover{border-color:var(--blue)}
+.opt input{margin:0;accent-color:var(--blue-dk)}
+.opt--on{border-color:var(--blue-dk);background:#e8f2ff;font-weight:bold}
+.chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;padding:3px}
+.chk-grid--3{grid-template-columns:1fr 1fr 1fr}
+.chk{display:flex;align-items:flex-start;gap:5px;font-size:var(--fs-sm);padding:3px 2px;cursor:pointer}
+.chk input{margin-top:1px;flex-shrink:0}
+.chk--on{font-weight:bold}
+.proc-flag{color:var(--orange);font-weight:bold}
+.inp,.sel,.ta{font:inherit;font-size:var(--fs);width:100%;border:1px solid var(--bdr);background:#fff;padding:2px 5px;height:22px;outline:none}
+.ta{height:70px;resize:vertical;line-height:1.45;padding:4px 5px}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--blue-dk);background:#fff!important}
+.inp--time{width:110px}
+.inp--other{margin-top:4px;max-width:420px}
+.inp:disabled{background:#f0f0f0!important;color:#999;border-style:dashed}
+.nt{display:grid;grid-template-columns:2fr 1fr;gap:6px;max-width:560px;align-items:end}
+.nt label{font-size:var(--fs-xs);color:var(--muted);font-weight:bold;display:block;margin-bottom:2px}
+.unk{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-xs);margin-left:6px;cursor:pointer}
+.time-row{display:flex;align-items:center}
+
+/* Page nav */
+.page-nav{display:flex;justify-content:space-between;margin-top:10px;padding-top:7px;border-top:1px solid var(--bdr-lt)}
+
+/* Output */
+.output-mode-bar{display:flex;gap:6px;margin-bottom:7px;padding:6px;background:var(--bg-strip);border:1px solid var(--bdr-lt);align-items:center;flex-wrap:wrap}
+.output-mode-bar__label{font-size:var(--fs-xs);color:var(--muted);font-weight:bold;margin-right:4px}
+.output-ta{font-family:"Courier New",monospace;font-size:var(--fs-sm);width:100%;height:470px;border:1px solid var(--bdr);padding:8px;resize:vertical;line-height:1.55;background:#fafbfc}
+.output-actions{display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap}
+.output-hint{font-size:var(--fs-xs);color:var(--muted);margin-left:auto;font-style:italic}
+.phi-scan-warn{background:#fff0f0;border:1px solid #e09090;border-left:4px solid var(--red);padding:5px 8px;font-size:var(--fs-xs);font-weight:bold;color:var(--red);margin-bottom:6px}
+
+/* Status bar */
+.statusbar{display:flex;gap:8px;align-items:center;padding:3px 8px;background:var(--bg-strip);border-top:1px solid var(--bdr);font-size:var(--fs-xs);color:var(--muted);flex-shrink:0;flex-wrap:wrap}
+.statusbar__privacy{color:var(--purple);font-weight:bold}
+.statusbar__credit{margin-left:auto}
+.statusbar__miss{background:var(--red);color:#fff;padding:1px 6px;font-weight:bold;border-radius:2px}
+.statusbar__miss--ok{background:#2e7d32}
+
+/* Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay--open{display:flex}
+.modal{background:#fff;border:2px solid var(--bdr);box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;max-height:88vh;max-width:580px;width:96%}
+.modal--wide{max-width:720px}
+.modal__header{background:var(--blue);color:#fff;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;font-weight:bold;font-size:var(--fs-sm);flex-shrink:0}
+.modal__header--warn{background:var(--orange)!important}
+.modal__body{padding:12px;overflow-y:auto;flex:1;font-size:var(--fs-sm);line-height:1.6}
+.modal__body ul{padding-left:18px;margin:4px 0 8px}
+.modal__footer{border-top:1px solid var(--bdr-lt);padding:8px 12px;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.btn--modal-close{background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;padding:0 4px}
+.ack-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center}
+.ack-overlay--open{display:flex}
+.ack-box{background:#fff;border:3px solid var(--purple);max-width:620px;width:96%;max-height:90vh;overflow-y:auto}
+.ack-box__hdr{background:var(--purple);color:#fff;padding:10px 16px;font-weight:bold;font-size:var(--fs-sm)}
+.ack-box__body{padding:14px 16px;font-size:var(--fs-sm);line-height:1.65}
+.ack-box__foot{padding:10px 16px;border-top:1px solid var(--bdr-lt);display:flex;flex-direction:column;gap:8px}
+.ack-chk-row{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-sm)}
+.ack-chk-row input{margin-top:2px;accent-color:var(--purple)}
+
+/* Toast */
+.toast{position:fixed;bottom:16px;right:16px;background:#2e7d32;color:#fff;padding:8px 16px;font-size:var(--fs-sm);font-weight:bold;z-index:800;display:none;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.toast--show{display:block}
+.dec-badge{display:inline-block;background:var(--orange);color:#fff;font-size:9px;font-weight:bold;letter-spacing:.04em;padding:1px 6px;border-radius:8px;vertical-align:middle}
+
+@media print{.phi-banner,.toolbar,.nav,.statusbar,.modal-overlay,.ack-overlay,.expiry-overlay,.toast,.output-mode-bar,.output-actions{display:none!important}.win{border:none}.shell{padding:0}.output-ta{height:auto!important;border:none!important}}
+@media (max-width:760px){
+  :root{--phi-bar:48px}
+  .phi-banner{flex-direction:column;gap:2px}
+  .main{flex-direction:column}
+  .nav{width:100%;max-height:120px;border-right:none;border-bottom:1px solid var(--bdr)}
+  .landing__cards{grid-template-columns:1fr}
+  .chk-grid,.chk-grid--3,.nt{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="phi-banner" role="banner">
+  <span class="phi-banner__main">&#128274; PRIVACY MODE ACTIVE — NO PHI</span>
+  <span class="phi-banner__note">Proof of concept only &nbsp;|&nbsp; Do not enter patient names, MRNs, dates of birth or real staff/family names &nbsp;|&nbsp; Browser only — nothing saved or sent</span>
+</div>
+
+<div class="expiry-overlay" id="expiry-overlay" role="alertdialog" aria-modal="true">
+  <div class="expiry-box">
+    <div class="expiry-box__icon">&#9888;</div>
+    <div class="expiry-box__title">This Version Has Expired</div>
+    <div class="expiry-box__body">This proof of concept is time-limited while the Code 99 / RRT physician documentation moves through committee review and change control. This version expired on May 31, 2027.</div>
+    <div class="expiry-box__contact">Contact Nursing Informatics for the current version.</div>
+  </div>
+</div>
+
+<div class="ack-overlay" id="ack-overlay" role="dialog" aria-modal="true" aria-labelledby="ack-hdr">
+  <div class="ack-box">
+    <div class="ack-box__hdr" id="ack-hdr">&#128274; Privacy &amp; POC Acknowledgment — Required Before Proceeding</div>
+    <div class="ack-box__body">
+      <p><strong>This is a design proof of concept, not a clinical documentation tool.</strong> It shows the proposed Oracle Health physician PowerForms <em>Code 99 Note – Physician</em> and <em>RRT Note – Physician</em> for review by the Code 99 / RRT Committee, aligned to the SJMC Code 99 and Rapid Response policy (rev. 09/2026).</p>
+      <p><strong>Never enter:</strong> patient names, dates of birth, MRN/FIN, dates, or real staff or family names. Use the demo case or fictional text.</p>
+      <p style="font-size:var(--fs-xs);color:var(--muted)">Field IDs (S1–S13 shared, C1–C7 Code 99, R1–R5 RRT) match the committee design. Items marked <span class="dec-badge">DECISION</span> are pending committee decisions. Build feasibility must be confirmed by the Oracle Health build team.</p>
+    </div>
+    <div class="ack-box__foot">
+      <label class="ack-chk-row"><input type="checkbox" id="ack-checkbox"> I understand this is a POC and I will not enter PHI.</label>
+      <button class="btn btn--primary" id="ack-btn" type="button" data-action="confirm-ack" disabled>Confirm &amp; Continue &rsaquo;</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell"><div class="win">
+
+<div class="expiry-warn-bar" id="expiry-warn" role="alert">
+  <span><strong>&#9888; Expiring Soon:</strong> This POC version expires May 31, 2027.</span>
+  <button class="expiry-warn-bar__dismiss" type="button" data-action="dismiss-expiry-warn" aria-label="Dismiss">&#x2715;</button>
+</div>
+
+<header class="toolbar">
+  <span class="toolbar__value" id="tb-title">Code 99 / RRT Physician PowerForms — POC v0.1</span>
+  <span class="toolbar__actions">
+    <button class="btn btn--sm hidden" id="btn-demo" type="button" data-action="load-demo">&#9998; Load Demo Case</button>
+    <button class="btn btn--sm" type="button" data-action="open-modal" data-modal="decM">&#9878; Committee Decisions</button>
+    <button class="btn btn--sm" type="button" data-action="open-modal" data-modal="aboutM">&#8505; What Changed</button>
+    <button class="btn btn--sm" type="button" data-action="confirm-reset">&#8635; New Session</button>
+    <button class="btn btn--sm btn--primary hidden" id="btn-gen" type="button" data-action="sign-review">&#10004; Sign / Review</button>
+  </span>
+</header>
+
+<div id="landing-overlay" class="landing-overlay">
+  <div class="landing__inner">
+    <div class="landing__brand">Saint Joseph's Medical Center · Nursing Informatics · Proof of Concept for Code 99 / RRT Committee Review</div>
+    <div class="landing__title">Physician Post-Event Documentation — Code 99 &amp; Rapid Response</div>
+    <div class="landing__subtitle">Two PowerForms · one set of shared fields · three sections · physician decisions only · nursing records stay the source for times, medications, shocks and vital signs</div>
+    <div class="banner banner--teal" style="text-align:left">
+      <strong>Goal:</strong> a consistent, defensible physician note that providers can complete in under 3 minutes after the event. Every field names who uses its data; anything the Recording Nurse, RRT Flow Sheet or iView already captures is referenced, not re-entered.
+    </div>
+    <div class="landing__cards">
+      <button class="lc" type="button" data-action="start" data-form="c99">
+        <div class="lc__icon">&#10010;</div>
+        <div class="lc__title">Code 99 Note – Physician</div>
+        <div class="lc__desc">Team Leader documents reason, code status check, clinical course, impression, outcome (ROSC / expired / stabilized), disposition and notifications.</div>
+        <span class="lc__cta">Start &rsaquo;</span>
+      </button>
+      <button class="lc lc--rrt" type="button" data-action="start" data-form="rrt">
+        <div class="lc__icon">&#9889;</div>
+        <div class="lc__title">RRT Note – Physician</div>
+        <div class="lc__desc">Responding resident documents the policy criteria met, focused assessment, impression, response, escalation to Code 99, disposition and plan.</div>
+        <span class="lc__cta">Start &rsaquo;</span>
+      </button>
+      <button class="lc lc--plain" type="button" data-action="open-spec">
+        <div class="lc__icon">&#128438;</div>
+        <div class="lc__title">Build Map &amp; Crosswalk</div>
+        <div class="lc__desc">Field-by-field PowerForm spec (control, values, conditional rule, data consumer), data-ownership crosswalk and committee decisions.</div>
+        <span class="lc__cta">Open &rsaquo;</span>
+      </button>
+    </div>
+    <div class="landing__footer">
+      Lead: LeAnthony Mathews, Director, Nursing Informatics &nbsp;|&nbsp; For: Code 99 / RRT Committee &nbsp;|&nbsp; No PHI collected or stored &nbsp;|&nbsp; Draft — November 2026
+    </div>
+  </div>
+</div>
+
+<div class="main">
+<nav class="nav" aria-label="PowerForm sections">
+  <div class="nav__heading" id="nav-form-hdr">PowerForm</div>
+  <div class="nav__item nav__item--locked" id="nav-pg-1" data-action="nav-page" data-page-id="pg-1"><span class="nav__arrow">&#9733;</span><span class="nav__check">&#10004;</span><span>1. Event &amp; Code Status</span><span class="nav__ct" id="ct-pg-1"></span></div>
+  <div class="nav__item nav__item--locked" id="nav-pg-2" data-action="nav-page" data-page-id="pg-2"><span class="nav__arrow">&#9733;</span><span class="nav__check">&#10004;</span><span>2. Assessment &amp; Interventions</span><span class="nav__ct" id="ct-pg-2"></span></div>
+  <div class="nav__item nav__item--locked" id="nav-pg-3" data-action="nav-page" data-page-id="pg-3"><span class="nav__arrow">&#9733;</span><span class="nav__check">&#10004;</span><span>3. Outcome, Plan &amp; Communication</span><span class="nav__ct" id="ct-pg-3"></span></div>
+  <div class="nav__heading">Output</div>
+  <div class="nav__item nav__item--locked" id="nav-pg-out" data-action="nav-page" data-page-id="pg-out"><span class="nav__arrow">&#9679;</span><span class="nav__check">&#10004;</span><span>Sign &amp; Review</span></div>
+</nav>
+
+<div class="content" id="content">
+
+<section class="page" id="pg-1">
+  <div class="section-hdr" data-hdr><span>1. Event &amp; Code Status</span><span class="section-hdr__badge" data-form-badge></span></div>
+  <div class="banner banner--privacy"><strong>Simulation context.</strong> In Oracle Health the patient, encounter, unit, author and signature date/time auto-populate. Only the event time ("Performed on") is entered here.</div>
+  <div id="body-1"></div>
+  <div class="page-nav"><span></span><button class="btn btn--primary" type="button" data-action="go" data-page="pg-2">Next &rsaquo;</button></div>
+</section>
+
+<section class="page" id="pg-2">
+  <div class="section-hdr" data-hdr><span>2. Assessment &amp; Interventions</span><span class="section-hdr__badge" data-form-badge></span></div>
+  <div class="banner banner--teal" id="owned-banner"></div>
+  <div id="body-2"></div>
+  <div class="page-nav"><button class="btn" type="button" data-action="go" data-page="pg-1">&lsaquo; Back</button><button class="btn btn--primary" type="button" data-action="go" data-page="pg-3">Next &rsaquo;</button></div>
+</section>
+
+<section class="page" id="pg-3">
+  <div class="section-hdr section-hdr--success" data-hdr-fixed><span>3. Outcome, Plan &amp; Communication</span><span class="section-hdr__badge" data-form-badge></span></div>
+  <div id="body-3"></div>
+  <div class="page-nav"><button class="btn" type="button" data-action="go" data-page="pg-2">&lsaquo; Back</button><button class="btn btn--primary" type="button" data-action="sign-review">Sign / Review &rsaquo;</button></div>
+</section>
+
+<section class="page" id="pg-out">
+  <div class="section-hdr section-hdr--success"><span>Sign &amp; Review — Simulated Oracle Health Behavior</span></div>
+  <div class="banner banner--danger hidden" id="out-missing"></div>
+  <div class="output-mode-bar">
+    <span class="output-mode-bar__label">VIEW:</span>
+    <button class="btn btn--sm" type="button" data-action="set-mode" data-mode="note" id="mode-note">Physician Note</button>
+    <button class="btn btn--sm" type="button" data-action="set-mode" data-mode="map">Build Map (PowerForm Spec)</button>
+    <button class="btn btn--sm" type="button" data-action="set-mode" data-mode="xwalk">Ownership Crosswalk &amp; Decisions</button>
+  </div>
+  <div class="phi-scan-warn hidden" id="phi-warn"></div>
+  <textarea class="output-ta" id="out-ta" readonly aria-label="Generated output"></textarea>
+  <div class="output-actions">
+    <button class="btn btn--success" type="button" data-action="sign" id="btn-sign">&#10004; Sign (simulated)</button>
+    <button class="btn btn--primary" type="button" data-action="copy-output">&#128203; Copy</button>
+    <button class="btn" type="button" data-action="print">&#128424; Print</button>
+    <button class="btn" type="button" data-action="back-to-form" id="btn-back-form">&lsaquo; Back to Form</button>
+    <span class="output-hint">POC output for design review — not a legal medical record.</span>
+  </div>
+</section>
+
+</div>
+</div>
+
+<footer class="statusbar">
+  <span class="statusbar__privacy">&#128274; No PHI · browser only</span>
+  <span id="sb-form">No form open</span>
+  <span id="sb-miss-wrap" class="hidden">Required missing: <span class="statusbar__miss" id="sb-miss">—</span></span>
+  <span class="statusbar__credit">Nursing Informatics · SJMC · POC v0.1 · Nov 2026</span>
+</footer>
+
+</div></div>
+
+<div class="modal-overlay" id="decM"><div class="modal modal--wide">
+  <div class="modal__header">Decisions for the Code 99 / RRT Committee <button class="btn--modal-close" type="button" data-action="close-modal">&times;</button></div>
+  <div class="modal__body">
+    <p><strong>1. Add a "Physician Documentation" section to the policy</strong> <span class="dec-badge">DECISION</span><br>
+      The 09/2026 policy names only the Resuscitation Record and the RRT Flow Sheet. Proposed: "The Team Leader completes the Code 99 Note – Physician in the EHR, and the responding resident completes the RRT Note – Physician, before the end of the shift (or within 24 hours). Notes written by residents are co-signed by the hospitalist or attending per GME policy."</p>
+    <p><strong>2. Attending and family notification on two records</strong> <span class="dec-badge">DECISION</span><br>
+      Both the Resuscitation Record and this note record notification. Recommended: the nurse records that it happened and when; the physician records who was told and what. Accept the overlap until iView replaces the paper record, then drop it from the nursing build.</p>
+    <p><strong>3. Nursing form alignment</strong> <span class="dec-badge">DECISION</span><br>
+      Update the RRT Flow Sheet activation criteria to the policy's 12 criteria (R1 already uses them). Add "Mechanical (LUCAS)" compressions to the Resuscitation Record / iView.</p>
+    <p><strong>4. Immediate Post Cardiac Arrest Assessment box</strong> <span class="dec-badge">DECISION</span><br>
+      The physician note now owns it (C4, C5, S5). Leave the Resuscitation Record box with "see physician note", or remove it in the iView version.</p>
+    <p><strong>5. Build question for Medsys</strong> <span class="dec-badge">DECISION</span><br>
+      PowerForm results land in Form Browser. Confirm whether these PowerForms should feed a "Code 99 Note" / "RRT Note" document type (Dynamic Documentation) so they file with physician Progress Notes and support co-signature routing. The field list does not change.</p>
+  </div>
+  <div class="modal__footer"><button class="btn" type="button" data-action="close-modal">Close</button></div>
+</div></div>
+
+<div class="modal-overlay" id="aboutM"><div class="modal modal--wide">
+  <div class="modal__header">What Changed from the Proposed Templates (11/9/26) <button class="btn--modal-close" type="button" data-action="close-modal">&times;</button></div>
+  <div class="modal__body">
+    <p><strong>Kept:</strong> two separate physician forms (Code 99 and RRT), the committee's section order, structured choices with narrative for reasoning.</p>
+    <p><strong>Removed (recorded elsewhere or redundant):</strong></p>
+    <ul>
+      <li>Separate date and time fields → PowerForm "Performed on" is the event time; signing records documentation time.</li>
+      <li>Physician arrival, Code 99 activation and conclusion times, ROSC time → Resuscitation Record / RRT Flow Sheet.</li>
+      <li>RRT initial and repeat vital signs, post-ROSC BP/HR/SpO₂/rhythm → iView / RRT Flow Sheet.</li>
+      <li>"On arrival: unresponsive / pulseless / apneic" and initial rhythm → C1 plus the Recording Nurse.</li>
+      <li>Separate "CPR performed" field → CPR is in the C2 checklist.</li>
+      <li>Printed "per current ACLS/PALS protocol" sentence → no automatic attestations.</li>
+      <li>Mental status and airway pick lists, four exam boxes, four intervention groups, separate differential / response / monitoring boxes → one assessment, one impression, one plan.</li>
+      <li>Supervising attending signature lines → native co-signature routing.</li>
+      <li>Debrief items → Debriefing for Resuscitation Event form.</li>
+    </ul>
+    <p><strong>Added or changed:</strong></p>
+    <ul>
+      <li>S2 author role (policy roles; addresses role confusion).</li>
+      <li>S4 code status checked against the active order — never pre-selected.</li>
+      <li>C1 uses the policy's Code 99 definition; R1 uses the policy's 12 RRT criteria.</li>
+      <li>C2 includes mechanical CPR (LUCAS); airway and access items flag a separate procedure note.</li>
+      <li>C4/C5 immediate post-cardiac arrest assessment as two pick lists.</li>
+      <li>C6 reason resuscitation stopped uses the Resuscitation Record values; C7 time of death pronounced.</li>
+      <li>R5 escalation rule: the RRT note ends at escalation and points to the Code 99 note.</li>
+    </ul>
+  </div>
+  <div class="modal__footer"><button class="btn" type="button" data-action="close-modal">Close</button></div>
+</div></div>
+
+<div class="modal-overlay" id="resetM"><div class="modal">
+  <div class="modal__header modal__header--warn">Start New Session? <button class="btn--modal-close" type="button" data-action="close-modal">&times;</button></div>
+  <div class="modal__body">All entries in this browser session will be cleared.</div>
+  <div class="modal__footer"><button class="btn" type="button" data-action="close-modal">Cancel</button><button class="btn btn--danger" type="button" data-action="do-reset">Clear &amp; Restart</button></div>
+</div></div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Constants & Configuration
+// ─────────────────────────────────────────────────────────────────
+
+const EXPIRY = new Date('2027-05-31T23:59:59');
+const WARN_DAYS = 30;
+const FORM_PAGES = ['pg-1', 'pg-2', 'pg-3'];
+const ALL_PAGES = [...FORM_PAGES, 'pg-out'];
+
+const FORM_META = {
+  c99: {
+    title: 'Code 99 Note – Physician',
+    noteTitle: 'CODE 99 / SIGNIFICANT EVENT NOTE – PHYSICIAN',
+    footer: 'Timed interventions, medications, defibrillation and rhythm checks are documented on the Code 99 Resuscitation Record.',
+    owned: '<strong>Not on this form by design:</strong> timed medications, shocks, rhythm checks, vital signs, ROSC and end times (Recording Nurse → Resuscitation Record), team roles and debrief (Debrief form), procedure details (procedure notes), orders (CPOE).',
+  },
+  rrt: {
+    title: 'RRT Note – Physician',
+    noteTitle: 'RAPID RESPONSE TEAM (RRT) NOTE – PHYSICIAN',
+    footer: 'Nursing assessment, vital signs and nursing interventions are documented on the RRT Documentation Flow Sheet.',
+    owned: '<strong>Not on this form by design:</strong> times called/arrived, initial and repeat vital signs, nursing interventions (Primary Nurse → RRT Documentation Flow Sheet / iView), orders (CPOE). Key values belong in your assessment text.',
+  },
+};
+
+const TRANSFER_DISPOSITIONS = ['icu', 'tele', 'proc', 'xfer'];
+const RESIDENT_ROLES = ['tl-res', 'resp-res'];
+
+const POLICY_AREAS = [
+  '7th Floor – ICU / Stepdown', '6th Floor – Hall 6 / Dialysis', '5th Floor – Hall 5 / Clinical Lab',
+  '4th Floor – Cardiology / Respiratory Therapy', '3rd Floor – Hall 3 / Wound Care', '2nd Floor – Hall 2 / Cafeteria',
+  '1st Floor – Admitting / Registration / Lobby', '1st Floor – Perioperative', 'Ground Floor – Radiology / Pharmacy / Central Supply',
+  'Basement', 'Emergency Department',
+];
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Type Definitions
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * @typedef  {Object} OptionDef
+ * @property {string}  v            - Stored value code
+ * @property {string}  t            - Display text (also note text)
+ * @property {boolean} [other]      - Opens a conditional free-text box, required when selected
+ * @property {boolean} [proc]       - Flags that a separate procedure note is required
+ * @property {boolean} [exclusive]  - Selecting it clears all other selections (checkbox fields)
+ */
+
+/**
+ * @typedef  {Object} FieldDef
+ * @description One PowerForm control (DTA) or an in-form banner (type 'banner').
+ * @property {string}   id         - Committee ID: CTX, S1-S13, C1-C7, R1-R5, or banner key
+ * @property {string[]} forms      - Forms that show it: 'c99' and/or 'rrt'
+ * @property {string}   page       - pg-1 | pg-2 | pg-3
+ * @property {string}   group      - Box heading within the section
+ * @property {'radio'|'check'|'select'|'text'|'ta'|'time'|'nameTime'|'banner'} type
+ * @property {string|Object} label - String, or {c99, rrt} per-form label
+ * @property {OptionDef[]|Object} [options] - Array, or {c99, rrt} per-form arrays
+ * @property {boolean}  [req]      - Required whenever visible
+ * @property {boolean}  [allowUnknown] - Time may be marked Unknown (satisfies required)
+ * @property {function(Object, string): boolean} [show] - Visibility rule (vals, form)
+ * @property {string}   [hint]     - Help text; string or {c99, rrt}
+ * @property {string}   [ruleText] - Build-map description of requirement/conditional logic
+ * @property {string}   [consumer] - Downstream consumer of the data
+ * @property {function(Object, string): string} [html] - Banner HTML (banners only)
+ * @property {string}   [tone]     - Banner tone class suffix
+ */
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Field Definitions (single source for form, note and build map)
+// ─────────────────────────────────────────────────────────────────
+
+const BOTH = ['c99', 'rrt'];
+const C99 = ['c99'];
+const RRT = ['rrt'];
+
+const isSurvivedPath = (V, form) => (form === 'c99' ? ['rosc', 'stabilized'].includes(V.C3) : V.R5 === 'no');
+
+/** @type {FieldDef[]} */
+const FIELDS = [
+  // ── Section 1: Event & Code Status ──
+  { id: 'CTX', forms: BOTH, page: 'pg-1', group: 'Event', type: 'time', req: true,
+    label: 'Event time ("Performed on")',
+    hint: 'Native PowerForm header, not a new DTA. Performed On = when the event happened; signing records when the note was written (42 CFR 482.24(c)). Date auto-populates.',
+    ruleText: 'Required. Native Performed On date/time', consumer: 'Note header; event vs documentation time; quality review' },
+  { id: 'S1', forms: BOTH, page: 'pg-1', group: 'Event', type: 'select',
+    label: 'Event location — only if different from the patient\'s unit',
+    options: POLICY_AREAS.map((a, i) => ({ v: 'loc' + i, t: a })).concat([{ v: 'other', t: 'Other', other: true }]),
+    hint: 'Response areas from the policy. Leave blank when the event happened on the patient\'s assigned unit.',
+    ruleText: 'Optional', consumer: 'Quality review (event location); note header' },
+  { id: 'S2', forms: BOTH, page: 'pg-1', group: 'Event', type: 'radio', req: true,
+    label: 'Your role',
+    options: [
+      { v: 'tl-res', t: 'Team Leader – senior resident' }, { v: 'tl-att', t: 'Team Leader – hospitalist / attending' },
+      { v: 'resp-res', t: 'Responding resident' }, { v: 'primary', t: 'Primary physician' }],
+    hint: 'Policy: the senior resident leads until the hospitalist or attending arrives.',
+    ruleText: 'Required', consumer: 'Co-signature routing; quality review (who led)' },
+  { id: 'b-cosign', forms: BOTH, page: 'pg-1', group: 'Event', type: 'banner', tone: 'info',
+    show: V => RESIDENT_ROLES.includes(V.S2),
+    html: () => 'Resident author: on signing, the note routes for hospitalist / attending co-signature (native Oracle Health workflow — no signature fields on the form). <span class="dec-badge">DECISION</span>' },
+
+  { id: 'C1', forms: C99, page: 'pg-1', group: 'Reason for activation', type: 'radio', req: true,
+    label: 'Code 99 activated for',
+    options: [{ v: 'cardiac', t: 'Cardiac arrest' }, { v: 'resp', t: 'Respiratory arrest' }, { v: 'other', t: 'Other immediately life-threatening condition', other: true }],
+    hint: 'Policy definition of Code 99. Initial rhythm is recorded by the Recording Nurse.',
+    ruleText: 'Required', consumer: 'Note; quality review (arrest vs non-arrest events)' },
+  { id: 'R1', forms: RRT, page: 'pg-1', group: 'Reason for activation', type: 'check', req: true, cols: 2,
+    label: 'RRT criteria met (select all)',
+    options: [
+      { v: 'hr', t: 'Heart rate <40 or >150' }, { v: 'sbp', t: 'SBP <90 or significant acute drop from baseline' },
+      { v: 'rr', t: 'Respiratory rate <8 or >28' }, { v: 'o2', t: 'Acute desaturation or increasing O₂ requirement' },
+      { v: 'wob', t: 'Increased work of breathing / respiratory distress' }, { v: 'ms', t: 'Acute change in consciousness or mental status' },
+      { v: 'sz', t: 'New seizure or acute neurologic deterioration' }, { v: 'stroke', t: 'New-onset stroke symptoms' },
+      { v: 'cp', t: 'Acute or concerning chest pain' }, { v: 'bleed', t: 'Significant uncontrolled bleeding' },
+      { v: 'concern', t: 'Staff concern (criteria not met)' }, { v: 'other', t: 'Other significant acute deterioration', other: true }],
+    hint: 'The policy\'s 12 activation criteria. The RRT Flow Sheet should be updated to the same list.',
+    ruleText: 'Required, at least one', consumer: 'Note; RRT trigger reporting (matches policy)' },
+
+  { id: 'S3', forms: BOTH, page: 'pg-1', group: 'Code status', type: 'radio', req: true,
+    label: 'Code status at the time of the event',
+    options: [{ v: 'full', t: 'Full Code' }, { v: 'dnr', t: 'DNR' }, { v: 'dni', t: 'DNI' }, { v: 'dnrdni', t: 'DNR + DNI' }, { v: 'other', t: 'Other limitation', other: true }],
+    ruleText: 'Required', consumer: 'Note; resuscitation decision defensibility; quality review' },
+  { id: 'S4', forms: BOTH, page: 'pg-1', group: 'Code status', type: 'radio', req: true,
+    label: 'Matches the active code status order?',
+    options: [{ v: 'yes', t: 'Yes' }, { v: 'disc', t: 'Discrepancy – addressed' }, { v: 'unable', t: 'Unable to verify' }],
+    hint: 'Never pre-selected. Policy: resuscitate unless a valid order limiting resuscitation is in effect.',
+    ruleText: 'Required; never defaulted', consumer: 'Note; code-status compliance audit' },
+  { id: 'b-disc', forms: BOTH, page: 'pg-1', group: 'Code status', type: 'banner', tone: 'warn',
+    show: V => V.S4 === 'disc',
+    html: (V, f) => 'Discrepancy: describe how it was reconciled in the <strong>' + (f === 'c99' ? 'Clinical course' : 'Focused assessment') + '</strong> (section 2), per institutional policy.' },
+
+  // ── Section 2: Assessment & Interventions ──
+  { id: 'C2', forms: C99, page: 'pg-2', group: 'Interventions', type: 'check', cols: 2,
+    label: 'Key interventions directed',
+    options: [
+      { v: 'cpr-man', t: 'CPR – manual' }, { v: 'cpr-lucas', t: 'CPR – mechanical (LUCAS)' },
+      { v: 'defib', t: 'Defibrillation / cardioversion' }, { v: 'pace', t: 'Transcutaneous pacing' },
+      { v: 'meds', t: 'ACLS / PALS medications' }, { v: 'airway', t: 'Advanced airway (ETT / supraglottic)', proc: true },
+      { v: 'access', t: 'IV / IO / central access', proc: true }, { v: 'other', t: 'Other', other: true }],
+    hint: 'A summary for the next physician. The Resuscitation Record stays the official record of what was given and when.',
+    ruleText: 'Optional', consumer: 'Next physician reading the note (summary)' },
+  { id: 'R2', forms: RRT, page: 'pg-2', group: 'Interventions', type: 'check', cols: 2,
+    label: 'Key interventions / tests ordered',
+    options: [
+      { v: 'abg', t: 'ABG' }, { v: 'cxr', t: 'Chest X-ray' }, { v: 'o2', t: 'O₂ escalation / BiPAP' }, { v: 'ecg', t: 'ECG' },
+      { v: 'fluid', t: 'IV fluid bolus' }, { v: 'labs', t: 'Labs' }, { v: 'meds', t: 'Medications' },
+      { v: 'sepsis', t: 'Sepsis protocol initiated' }, { v: 'stroke', t: 'Stroke code (Code Gray)' },
+      { v: 'other', t: 'Other', other: true }, { v: 'none', t: 'None beyond assessment', exclusive: true }],
+    hint: 'Same values as the RRT Flow Sheet. Orders are still entered in CPOE.',
+    ruleText: 'Optional; "None" clears other selections', consumer: 'Next physician reading the note (summary)' },
+  { id: 'R3', forms: RRT, page: 'pg-2', group: 'Interventions', type: 'text',
+    label: 'Consult requested (service)', hint: 'Provider/service lookup in the build.',
+    ruleText: 'Optional', consumer: 'Note; consult follow-up' },
+  { id: 'b-proc', forms: C99, page: 'pg-2', group: 'Interventions', type: 'banner', tone: 'warn',
+    show: V => (V.C2 || []).some(v => ['airway', 'access'].includes(v)),
+    html: V => 'Separate procedure note required for: <strong>' + optionTexts('C2', V).filter((t, i) => ['airway', 'access'].includes((V.C2 || [])[i])).join('; ') + '</strong>' },
+
+  { id: 'S5', forms: BOTH, page: 'pg-2', group: 'Assessment', type: 'ta', req: true,
+    label: { c99: 'Clinical course', rrt: 'Focused assessment' },
+    hint: {
+      c99: 'Key events, response to treatment and your decision-making. If resuscitation was stopped, say why. Do not re-list timed meds or shocks.',
+      rrt: 'Pertinent respiratory, cardiovascular and neurologic findings and key vital-sign values. Vital signs are charted by nursing.' },
+    ruleText: 'Required; label differs by form', consumer: 'Next physician; medical decision-making; peer review' },
+  { id: 'S6', forms: BOTH, page: 'pg-2', group: 'Assessment', type: 'ta', req: true,
+    label: 'Clinical impression / suspected cause',
+    hint: 'Working diagnosis or suspected cause and differential — your reasoning, not a restatement of the trigger.',
+    ruleText: 'Required', consumer: 'Next physician; medical decision-making; quality review' },
+
+  // ── Section 3: Outcome, Plan & Communication ──
+  { id: 'C3', forms: C99, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
+    label: 'Outcome',
+    options: [{ v: 'rosc', t: 'ROSC' }, { v: 'expired', t: 'Expired – resuscitation stopped' }, { v: 'stabilized', t: 'Stabilized, no arrest' }],
+    hint: 'ROSC and event-end times are on the Resuscitation Record.',
+    ruleText: 'Required; drives C4-C7 and S7-S9', consumer: 'Note; resuscitation outcome reporting' },
+  { id: 'C4', forms: C99, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
+    label: 'Post-arrest blood pressure support',
+    options: [{ v: 'stable', t: 'Stable without vasopressors' }, { v: 'pressor', t: 'On vasopressors' }],
+    show: V => V.C3 === 'rosc',
+    ruleText: 'Conditional: C3 = ROSC', consumer: 'Receiving team; post-arrest care' },
+  { id: 'C5', forms: C99, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
+    label: 'Post-arrest neurologic status',
+    options: [{ v: 'follow', t: 'Follows commands' }, { v: 'nofollow', t: 'Does not follow commands' }, { v: 'sedated', t: 'Sedated – unable to assess' }],
+    show: V => V.C3 === 'rosc',
+    ruleText: 'Conditional: C3 = ROSC', consumer: 'Receiving team; post-arrest care (temperature control / neuroprognosis)' },
+  { id: 'C6', forms: C99, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
+    label: 'Reason resuscitation stopped',
+    options: [{ v: 'futility', t: 'Medical futility' }, { v: 'ad', t: 'Advance directive' }, { v: 'family', t: 'Family restriction' }],
+    show: V => V.C3 === 'expired',
+    hint: 'Same values as the Resuscitation Record. Explain the decision in the clinical course.',
+    ruleText: 'Conditional: C3 = Expired', consumer: 'Note; mortality review; matches Resuscitation Record' },
+  { id: 'C7', forms: C99, page: 'pg-3', group: 'Outcome', type: 'time', req: true,
+    label: 'Time of death pronounced',
+    show: V => V.C3 === 'expired',
+    hint: 'Pronounced by the signing physician. Not taken from the event-end time.',
+    ruleText: 'Conditional: C3 = Expired; no Unknown option', consumer: 'Legal record of death; death certificate; mortality review' },
+
+  { id: 'R5', forms: RRT, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
+    label: 'Escalated to Code 99?',
+    options: [{ v: 'no', t: 'No' }, { v: 'yes', t: 'Yes' }],
+    ruleText: 'Required; Yes ends the note at escalation', consumer: 'Note; RRT-to-Code 99 escalation reporting; event linking' },
+  { id: 'b-esc', forms: RRT, page: 'pg-3', group: 'Outcome', type: 'banner', tone: 'danger',
+    show: V => V.R5 === 'yes',
+    html: () => 'The RRT note ends at escalation: <strong>"Escalated to Code 99 — see Code 99 Note – Physician."</strong> Response, disposition and plan are documented on the Code 99 note. <button class="btn btn--sm btn--primary" type="button" data-action="escalate">Start Code 99 Note &rsaquo;</button>' },
+  { id: 'R4', forms: RRT, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
+    label: 'Response to interventions',
+    options: [{ v: 'improved', t: 'Improved' }, { v: 'stabilized', t: 'Stabilized' }, { v: 'unchanged', t: 'Unchanged' }, { v: 'worse', t: 'Worse' }],
+    show: V => V.R5 === 'no',
+    ruleText: 'Conditional: R5 = No', consumer: 'Note; RRT outcome reporting' },
+
+  { id: 'S7', forms: BOTH, page: 'pg-3', group: 'Disposition & plan', type: 'radio', req: true,
+    label: 'Disposition',
+    options: {
+      c99: [{ v: 'icu', t: 'ICU' }, { v: 'stay-icu', t: 'Remained in ICU / critical care' }, { v: 'tele', t: 'Telemetry / step-down' },
+        { v: 'stay', t: 'Remained on current unit' }, { v: 'proc', t: 'Procedure (cath lab / IR / OR)' },
+        { v: 'xfer', t: 'Transfer to another facility' }, { v: 'other', t: 'Other', other: true }],
+      rrt: [{ v: 'stay', t: 'Remain on current unit' }, { v: 'tele', t: 'Telemetry / step-down' }, { v: 'icu', t: 'ICU' },
+        { v: 'proc', t: 'Procedure' }, { v: 'comfort', t: 'Comfort care' }, { v: 'other', t: 'Other', other: true }] },
+    show: isSurvivedPath,
+    hint: 'Selecting a disposition does not create a transfer or admission order.',
+    ruleText: 'Conditional: Code 99 C3 = ROSC or Stabilized; RRT R5 = No. Values differ by form', consumer: 'Note; bed management handoff; outcome reporting' },
+  { id: 'S8', forms: BOTH, page: 'pg-3', group: 'Disposition & plan', type: 'text', req: true,
+    label: 'Receiving physician / service',
+    show: (V, f) => isSurvivedPath(V, f) && TRANSFER_DISPOSITIONS.includes(V.S7),
+    hint: 'Provider/service lookup in the build.',
+    ruleText: 'Conditional: S7 = ICU, Telemetry, Procedure or Transfer', consumer: 'Handoff accountability' },
+  { id: 'S9', forms: BOTH, page: 'pg-3', group: 'Disposition & plan', type: 'ta', req: true,
+    label: 'Plan / reassessment / pending items',
+    show: isSurvivedPath,
+    hint: 'Monitoring and reassessment, escalation instructions, pending results. Orders are entered in CPOE — this form places no orders.',
+    ruleText: 'Conditional: patient survived (same rule as S7)', consumer: 'Receiving / primary team; continuity of care' },
+
+  { id: 'S10', forms: BOTH, page: 'pg-3', group: 'Communication', type: 'radio', req: true,
+    label: 'Attending',
+    options: [{ v: 'present', t: 'Present' }, { v: 'notified', t: 'Notified' }, { v: 'self', t: 'I am the attending' }, { v: 'unable', t: 'Unable to reach' }],
+    ruleText: 'Required', consumer: 'Note; attending-notification compliance' },
+  { id: 'S11', forms: BOTH, page: 'pg-3', group: 'Communication', type: 'nameTime', req: true, allowUnknown: true,
+    label: 'Attending name / time notified', nameLabel: 'Attending name', show: V => V.S10 === 'notified',
+    ruleText: 'Conditional: S10 = Notified; time may be Unknown', consumer: 'Note; notification audit' },
+  { id: 'S12', forms: BOTH, page: 'pg-3', group: 'Communication', type: 'radio', req: true,
+    label: 'Family / representative',
+    options: [{ v: 'notified', t: 'Notified' }, { v: 'bedside', t: 'At bedside' }, { v: 'updated', t: 'Patient updated' },
+      { v: 'primary', t: 'Primary team to notify' }, { v: 'unable', t: 'Unable to reach' }],
+    hint: '"Notified by" defaults to the signing physician.',
+    ruleText: 'Required', consumer: 'Note; family-communication audit' },
+  { id: 'S13', forms: BOTH, page: 'pg-3', group: 'Communication', type: 'nameTime', req: true, allowUnknown: true,
+    label: 'Person notified (name, relationship) / time', nameLabel: 'Name and relationship', show: V => V.S12 === 'notified',
+    ruleText: 'Conditional: S12 = Notified; time may be Unknown', consumer: 'Note; family-communication audit' },
+];
+
+const FIELD_BY_ID = Object.fromEntries(FIELDS.map(f => [f.id, f]));
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Demo Cases (fictional — no PHI)
+// ─────────────────────────────────────────────────────────────────
+
+const DEMO = {
+  c99: {
+    CTX: '14:32', S2: 'tl-res', C1: 'cardiac', S3: 'full', S4: 'yes',
+    C2: ['cpr-man', 'defib', 'meds', 'airway'],
+    S5: 'Found pulseless by unit staff; CPR in progress on arrival. Initial shockable rhythm; two shocks and one dose of epinephrine with ROSC after the second shock. Intubated after ROSC for airway protection.',
+    S6: 'VF arrest, suspected ischemic cause. Hyperkalemia and hypoxia considered; electrolytes pending.',
+    C3: 'rosc', C4: 'pressor', C5: 'nofollow', S7: 'icu', S8: 'ICU team (demo)',
+    S9: '12-lead ECG, troponin, electrolytes, ABG. Cardiology consult for possible catheterization. Post-arrest temperature control per ICU. Reassess neurologic status at 24 hours.',
+    S10: 'notified', 'S11.name': 'Demo Attending', 'S11.time': '14:58',
+    S12: 'notified', 'S13.name': 'Spouse (demo)', 'S13.time': '15:10',
+  },
+  rrt: {
+    CTX: '11:02', S2: 'resp-res', R1: ['sbp', 'ms'], S3: 'full', S4: 'yes',
+    R2: ['ecg', 'labs', 'fluid'],
+    S5: 'Lethargic but arousable, oriented to self. SBP in the low 80s from a baseline in the 120s, HR 118, extremities warm. Lungs clear. No focal neurologic deficit.',
+    S6: 'Hypotension, likely hypovolemia versus early sepsis. Differential includes GI bleed.',
+    R5: 'no', R4: 'improved', S7: 'tele', S8: 'Hospitalist service (demo)',
+    S9: 'Repeat BP every 15 minutes for 1 hour. Lactate, CBC and blood cultures. Escalate to ICU if SBP stays below 90 after a second bolus.',
+    S10: 'notified', 'S11.name': 'Demo Hospitalist', 'S11.time': '11:20',
+    S12: 'primary',
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: State
+// ─────────────────────────────────────────────────────────────────
+
+const state = {
+  form: null,          // 'c99' | 'rrt' | null
+  vals: {},            // field id (or id.sub) -> string | string[] | boolean
+  visited: new Set(),  // pages the user has opened
+  showMissing: false,  // pink highlights after a sign attempt
+  outputMode: 'note',
+  currentPage: null,
+  signed: false,
+};
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Internal Utilities
+// ─────────────────────────────────────────────────────────────────
+
+function getEl(id) { return document.getElementById(id); }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/** Resolve a per-form value ({c99, rrt}) or return a plain value unchanged. */
+function byForm(value, form) {
+  const isPerForm = value && typeof value === 'object' && !Array.isArray(value) && ('c99' in value || 'rrt' in value);
+  return isPerForm ? value[form] : value;
+}
+
+function showToast(msg) {
+  const t = getEl('toast');
+  t.textContent = msg; t.classList.add('toast--show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => t.classList.remove('toast--show'), 2200);
+}
+
+function fieldOptions(f) { return byForm(f.options, state.form) || []; }
+function fieldLabel(f) { return byForm(f.label, state.form); }
+
+function isShown(f) {
+  if (!state.form || !f.forms.includes(state.form)) return false;
+  return !f.show || f.show(state.vals, state.form);
+}
+
+/** Option display texts for the selected value(s), with "Other" replaced by its free text. */
+function optionTexts(id, V = state.vals) {
+  const f = FIELD_BY_ID[id];
+  const raw = V[id];
+  const selected = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+  return selected.map(v => {
+    const o = fieldOptions(f).find(x => x.v === v);
+    if (!o) return v;
+    if (o.other) return (o.t + ': ' + (V[id + '.other'] || '').trim()).replace(/:\s*$/, '');
+    return o.t;
+  });
+}
+function optionText(id) { return optionTexts(id)[0] || ''; }
+
+function selectedHasOther(f) {
+  const raw = state.vals[f.id];
+  const selected = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+  return fieldOptions(f).some(o => o.other && selected.includes(o.v));
+}
+
+function isFilled(f) {
+  const V = state.vals;
+  const otherOk = !selectedHasOther(f) || Boolean((V[f.id + '.other'] || '').trim());
+  if (f.type === 'check') return (V[f.id] || []).length > 0 && otherOk;
+  if (f.type === 'time') return Boolean(V[f.id]) || (f.allowUnknown && V[f.id + '.unk'] === true);
+  if (f.type === 'nameTime') {
+    const hasTime = Boolean(V[f.id + '.time']) || V[f.id + '.unk'] === true;
+    return Boolean((V[f.id + '.name'] || '').trim()) && hasTime;
+  }
+  return Boolean(String(V[f.id] || '').trim()) && otherOk;
+}
+
+function missingFields(page) {
+  return FIELDS.filter(f => f.type !== 'banner' && f.req && isShown(f) && (!page || f.page === page) && !isFilled(f));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Rendering
+// ─────────────────────────────────────────────────────────────────
+
+function renderOtherInput(f) {
+  const show = selectedHasOther(f);
+  return '<input class="inp inp--other' + (show ? '' : ' hidden') + '" data-fid="' + f.id + '" data-sub="other" placeholder="Specify" value="' + esc(state.vals[f.id + '.other']) + '" aria-label="Specify other">';
+}
+
+function renderRadio(f) {
+  const cur = state.vals[f.id];
+  const opts = fieldOptions(f).map(o =>
+    '<label class="opt' + (cur === o.v ? ' opt--on' : '') + '"><input type="radio" name="f-' + f.id + '" value="' + o.v + '" data-fid="' + f.id + '"' + (cur === o.v ? ' checked' : '') + '> ' + esc(o.t) + '</label>').join('');
+  return '<div class="opt-row" role="radiogroup">' + opts + '</div>' + renderOtherInput(f);
+}
+
+function renderCheck(f) {
+  const cur = state.vals[f.id] || [];
+  const cls = f.cols === 3 ? 'chk-grid chk-grid--3' : 'chk-grid';
+  const opts = fieldOptions(f).map(o => {
+    const on = cur.includes(o.v);
+    const flag = o.proc ? ' <span class="proc-flag" title="Separate procedure note required">*</span>' : '';
+    return '<label class="chk' + (on ? ' chk--on' : '') + '"><input type="checkbox" value="' + o.v + '" data-fid="' + f.id + '"' + (on ? ' checked' : '') + '> <span>' + esc(o.t) + flag + '</span></label>';
+  }).join('');
+  return '<div class="' + cls + '">' + opts + '</div>' + renderOtherInput(f);
+}
+
+function renderSelect(f) {
+  const cur = state.vals[f.id] || '';
+  const opts = fieldOptions(f).map(o => '<option value="' + o.v + '"' + (cur === o.v ? ' selected' : '') + '>' + esc(o.t) + '</option>').join('');
+  return '<select class="sel" style="max-width:420px" data-fid="' + f.id + '"><option value="">— Patient\'s assigned unit —</option>' + opts + '</select>' + renderOtherInput(f);
+}
+
+function renderTime(f) {
+  const unk = state.vals[f.id + '.unk'] === true;
+  const unkBox = f.allowUnknown ? '<label class="unk"><input type="checkbox" data-fid="' + f.id + '" data-sub="unk"' + (unk ? ' checked' : '') + '> Unknown</label>' : '';
+  return '<div class="time-row"><input class="inp inp--time" type="time" data-fid="' + f.id + '" value="' + esc(state.vals[f.id]) + '"' + (unk ? ' disabled' : '') + ' aria-label="' + esc(fieldLabel(f)) + '">' + unkBox + '</div>';
+}
+
+function renderNameTime(f) {
+  const V = state.vals;
+  const unk = V[f.id + '.unk'] === true;
+  return '<div class="nt"><div><label>' + esc(f.nameLabel) + '</label><input class="inp" data-fid="' + f.id + '" data-sub="name" value="' + esc(V[f.id + '.name']) + '" placeholder="Fictional names only in the POC"></div>' +
+    '<div><label>Time</label><div class="time-row"><input class="inp inp--time" type="time" data-fid="' + f.id + '" data-sub="time" value="' + esc(V[f.id + '.time']) + '"' + (unk ? ' disabled' : '') + '>' +
+    '<label class="unk"><input type="checkbox" data-fid="' + f.id + '" data-sub="unk"' + (unk ? ' checked' : '') + '> Unknown</label></div></div></div>';
+}
+
+const CONTROL_RENDERERS = {
+  radio: renderRadio,
+  check: renderCheck,
+  select: renderSelect,
+  time: renderTime,
+  nameTime: renderNameTime,
+  text: f => '<input class="inp" style="max-width:420px" data-fid="' + f.id + '" value="' + esc(state.vals[f.id]) + '" aria-label="' + esc(fieldLabel(f)) + '">',
+  ta: f => '<textarea class="ta" data-fid="' + f.id + '" aria-label="' + esc(fieldLabel(f)) + '">' + esc(state.vals[f.id]) + '</textarea>',
+};
+
+function renderField(f) {
+  if (f.type === 'banner') return '<div class="banner banner--' + f.tone + ' hidden" id="fw-' + f.id + '"></div>';
+  const reqMark = f.req ? (f.show ? '<span class="fld__req">*</span><span class="fld__opt">(when shown)</span>' : '<span class="fld__req">*</span>') : '<span class="fld__opt">(optional)</span>';
+  const hint = byForm(f.hint, state.form);
+  return '<div class="fld" id="fw-' + f.id + '">' +
+    '<div class="fld__lbl"><span class="fld__id">' + f.id + '</span>' + esc(fieldLabel(f)) + reqMark + '</div>' +
+    CONTROL_RENDERERS[f.type](f) +
+    (hint ? '<div class="fld__hint">' + esc(hint) + '</div>' : '') + '</div>';
+}
+
+function renderPage(pageId, bodyId) {
+  const fields = FIELDS.filter(f => f.page === pageId && f.forms.includes(state.form));
+  const groups = [];
+  fields.forEach(f => {
+    const last = groups[groups.length - 1];
+    if (last && last.name === f.group) last.items.push(f);
+    else groups.push({ name: f.group, items: [f] });
+  });
+  getEl(bodyId).innerHTML = groups.map(g =>
+    '<div class="box" data-group="' + esc(g.name) + '"><div class="box__title">' + esc(g.name) + '</div>' + g.items.map(renderField).join('') + '</div>').join('');
+}
+
+function renderForm() {
+  const meta = FORM_META[state.form];
+  renderPage('pg-1', 'body-1');
+  renderPage('pg-2', 'body-2');
+  renderPage('pg-3', 'body-3');
+  getEl('owned-banner').innerHTML = meta.owned;
+  document.querySelectorAll('[data-form-badge]').forEach(b => { b.textContent = meta.title; });
+  document.querySelectorAll('[data-hdr]').forEach(h => h.classList.toggle('section-hdr--rrt', state.form === 'rrt'));
+  getEl('nav-form-hdr').textContent = meta.title;
+  getEl('tb-title').textContent = meta.title + ' — POC v0.1';
+  getEl('sb-form').textContent = meta.title;
+  getEl('btn-demo').classList.remove('hidden');
+  getEl('mode-note').classList.remove('hidden');
+  getEl('btn-sign').classList.remove('hidden');
+  getEl('btn-back-form').classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Refresh (visibility, required highlighting, nav, status)
+// ─────────────────────────────────────────────────────────────────
+
+function refreshField(f) {
+  const wrap = getEl('fw-' + f.id);
+  if (!wrap) return;
+  const shown = isShown(f);
+  wrap.classList.toggle('hidden', !shown);
+  if (f.type === 'banner') { if (shown) wrap.innerHTML = f.html(state.vals, state.form); return; }
+  // classList.toggle(name, undefined) flips the class, so coerce to a real boolean.
+  const empty = Boolean(shown && f.req && !isFilled(f));
+  wrap.classList.toggle('fld--empty', empty);
+  wrap.classList.toggle('fld--missing', empty && state.showMissing);
+  const other = wrap.querySelector('[data-sub="other"]');
+  if (other) other.classList.toggle('hidden', !selectedHasOther(f));
+  wrap.querySelectorAll('.opt').forEach(l => l.classList.toggle('opt--on', l.querySelector('input').checked));
+  wrap.querySelectorAll('.chk').forEach(l => l.classList.toggle('chk--on', l.querySelector('input').checked));
+}
+
+/** Hide a section box when every field in it is hidden by conditional logic. */
+function hideEmptyGroup(box) {
+  const anyVisible = [...box.querySelectorAll('.fld')].some(el => !el.classList.contains('hidden'));
+  box.classList.toggle('hidden', !anyVisible);
+}
+
+function refreshNav() {
+  FORM_PAGES.forEach(p => {
+    const nav = getEl('nav-' + p);
+    const miss = missingFields(p).length;
+    nav.classList.toggle('nav__item--done', state.visited.has(p) && miss === 0);
+    nav.classList.toggle('nav__item--pending', state.visited.has(p) && miss > 0);
+    getEl('ct-' + p).textContent = miss > 0 && state.visited.has(p) ? miss : '';
+  });
+  getEl('nav-pg-out').classList.toggle('nav__item--done', state.signed);
+}
+
+function refreshStatus() {
+  const n = missingFields().length;
+  const badge = getEl('sb-miss');
+  badge.textContent = n;
+  badge.classList.toggle('statusbar__miss--ok', n === 0);
+  getEl('sb-miss-wrap').classList.toggle('hidden', !state.form);
+}
+
+function refresh() {
+  if (!state.form) return;
+  FIELDS.filter(f => f.forms.includes(state.form)).forEach(refreshField);
+  document.querySelectorAll('#content [data-group]').forEach(hideEmptyGroup);
+  refreshNav();
+  refreshStatus();
+  if (state.currentPage === 'pg-out') generateOutput();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Input Handling
+// ─────────────────────────────────────────────────────────────────
+
+/** Apply checkbox exclusivity: an exclusive option clears the rest, and any other option clears it. */
+function applyExclusive(f, value, checked) {
+  if (!checked) return;
+  const opts = fieldOptions(f);
+  const exclusive = opts.filter(o => o.exclusive).map(o => o.v);
+  const isExclusive = exclusive.includes(value);
+  const keep = v => (isExclusive ? v === value : !exclusive.includes(v));
+  state.vals[f.id] = (state.vals[f.id] || []).filter(keep);
+  getEl('fw-' + f.id).querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = state.vals[f.id].includes(cb.value); });
+}
+
+function readCheckbox(el, f) {
+  const set = new Set(state.vals[f.id] || []);
+  if (el.checked) set.add(el.value); else set.delete(el.value);
+  state.vals[f.id] = [...set];
+  applyExclusive(f, el.value, el.checked);
+}
+
+function readUnknown(el, f) {
+  state.vals[f.id + '.unk'] = el.checked;
+  const timeSel = f.type === 'nameTime' ? '[data-sub="time"]' : 'input[type="time"]';
+  const timeInp = getEl('fw-' + f.id).querySelector(timeSel);
+  timeInp.disabled = el.checked;
+  if (el.checked) { timeInp.value = ''; state.vals[f.type === 'nameTime' ? f.id + '.time' : f.id] = ''; }
+}
+
+function readInput(el) {
+  const f = FIELD_BY_ID[el.dataset.fid];
+  if (!f) return;
+  const sub = el.dataset.sub;
+  state.signed = false;
+  if (sub === 'unk') { readUnknown(el, f); return; }
+  if (sub) { state.vals[f.id + '.' + sub] = el.value; return; }
+  if (el.type === 'checkbox') { readCheckbox(el, f); return; }
+  state.vals[f.id] = el.value;
+}
+
+function onFieldEvent(ev) {
+  if (!ev.target.dataset || !ev.target.dataset.fid) return;
+  readInput(ev.target);
+  refresh();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Output — Physician Note
+// ─────────────────────────────────────────────────────────────────
+
+function val(id) { return isShown(FIELD_BY_ID[id]) ? state.vals[id] : undefined; }
+function text(id) { return isShown(FIELD_BY_ID[id]) ? String(state.vals[id] || '').trim() : ''; }
+function timeOrUnknown(id, sub) {
+  const key = sub ? id + '.' + sub : id;
+  return state.vals[id + '.unk'] ? 'time unknown' : (state.vals[key] || '—');
+}
+
+function pushSection(L, heading, lines) {
+  const body = lines.filter(Boolean);
+  if (!body.length) return;
+  L.push('', heading.toUpperCase());
+  body.forEach(x => L.push(x));
+}
+
+function codeStatusLine() {
+  if (!val('S3')) return '';
+  const check = { yes: 'matches the active order', disc: 'discrepancy with the active order identified and addressed', unable: 'unable to verify against the active order' }[val('S4')];
+  return 'Code status at time of event: ' + optionText('S3') + (check ? ' (' + check + ').' : '.');
+}
+
+function headerLines(meta) {
+  const L = [meta.noteTitle, '-'.repeat(meta.noteTitle.length)];
+  L.push('Event time (Performed on): ' + (state.vals.CTX || '—') + '   [date auto-populated]');
+  L.push('Location: ' + (val('S1') ? optionText('S1') : 'Patient\'s assigned unit [auto]'));
+  L.push('Author: [signing physician, auto]' + (val('S2') ? ' — ' + optionText('S2') : ''));
+  const cs = codeStatusLine();
+  if (cs) L.push(cs);
+  return L;
+}
+
+function outcomeLinesC99() {
+  const o = val('C3');
+  if (o === 'rosc') {
+    const post = [optionText('C4'), optionText('C5')].filter(Boolean).map(s => s.charAt(0).toLowerCase() + s.slice(1));
+    return ['ROSC achieved.', post.length ? 'Immediate post-cardiac arrest assessment: ' + post.join('; ') + '.' : ''];
+  }
+  if (o === 'expired') {
+    return ['Resuscitation stopped. Reason: ' + (optionText('C6') || '—') + '.',
+      'Time of death pronounced: ' + (state.vals.C7 || '—') + ', by the signing physician.'];
+  }
+  if (o === 'stabilized') return ['Stabilized; no cardiopulmonary arrest occurred.'];
+  return [];
+}
+
+function outcomeLinesRRT() {
+  if (val('R5') === 'yes') return ['Escalated to Code 99 — see Code 99 Note – Physician.'];
+  if (val('R5') === 'no') return ['Not escalated to Code 99.', val('R4') ? 'Response to interventions: ' + optionText('R4') + '.' : ''];
+  return [];
+}
+
+function dispositionLines() {
+  if (!val('S7')) return [];
+  return ['Disposition: ' + optionText('S7') + '.',
+    text('S8') ? 'Receiving physician / service: ' + text('S8') + '.' : '',
+    text('S9') ? 'Plan: ' + text('S9') : ''];
+}
+
+function communicationLines() {
+  const lines = [];
+  if (val('S10')) {
+    const a = val('S10') === 'notified'
+      ? 'Notified — ' + ((state.vals['S11.name'] || '').trim() || '—') + ', ' + timeOrUnknown('S11', 'time') + '.'
+      : optionText('S10') + '.';
+    lines.push('Attending: ' + a);
+  }
+  if (val('S12')) {
+    const fam = val('S12') === 'notified'
+      ? 'Notified — ' + ((state.vals['S13.name'] || '').trim() || '—') + ', ' + timeOrUnknown('S13', 'time') + ', by the signing physician.'
+      : optionText('S12') + '.';
+    lines.push('Family / representative: ' + fam);
+  }
+  return lines;
+}
+
+function noteText() {
+  if (!state.form) return 'Open a form from the start screen to generate a note.';
+  const f = state.form;
+  const meta = FORM_META[f];
+  const L = headerLines(meta);
+  if (f === 'c99') {
+    pushSection(L, 'Reason for activation', [optionText('C1') ? optionText('C1') + '.' : '']);
+    pushSection(L, 'Clinical course', [text('S5'), (val('C2') || []).length ? 'Key interventions directed: ' + optionTexts('C2').join('; ') + '.' : '']);
+  } else {
+    pushSection(L, 'Reason for rapid response', [(val('R1') || []).length ? 'Criteria met: ' + optionTexts('R1').join('; ') + '.' : '']);
+    pushSection(L, 'Focused assessment', [text('S5')]);
+  }
+  pushSection(L, 'Clinical impression', [text('S6')]);
+  if (f === 'rrt') {
+    pushSection(L, 'Interventions', [(val('R2') || []).length ? 'Key interventions / tests: ' + optionTexts('R2').join('; ') + '.' : '', text('R3') ? 'Consult requested: ' + text('R3') + '.' : '']);
+  }
+  pushSection(L, 'Outcome', f === 'c99' ? outcomeLinesC99() : outcomeLinesRRT());
+  pushSection(L, 'Disposition and plan', dispositionLines());
+  pushSection(L, 'Communication', communicationLines());
+  L.push('', meta.footer);
+  if (f === 'c99' && (val('C2') || []).some(v => ['airway', 'access'].includes(v))) L.push('Procedure details are documented in separate procedure note(s).');
+  L.push('', 'Electronically signed: [author, date/time — Oracle Health]');
+  if (RESIDENT_ROLES.includes(val('S2'))) L.push('Co-signature: routed to supervising hospitalist / attending per GME policy.');
+  return L.join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Output — Build Map & Crosswalk
+// ─────────────────────────────────────────────────────────────────
+
+function optionListText(f) {
+  if (!f.options) return '';
+  const fmt = arr => arr.map(o => o.t + (o.other ? ' [+text]' : '') + (o.proc ? ' [*proc note]' : '') + (o.exclusive ? ' [exclusive]' : '')).join(' | ');
+  if (Array.isArray(f.options)) return fmt(f.options);
+  return 'Code 99: ' + fmt(f.options.c99) + '\n             RRT: ' + fmt(f.options.rrt);
+}
+
+const CONTROL_NAMES = { radio: 'Single select (alpha)', check: 'Multi select (alpha)', select: 'Pick list', text: 'Free text (short)', ta: 'Free text (multi-line)', time: 'Time', nameTime: 'Free text + time (+Unknown)' };
+
+function mapText() {
+  const L = []; const hr = '='.repeat(78);
+  L.push('CODE 99 / RRT PHYSICIAN POWERFORMS — BUILD MAP (POC v0.1, committee-confirmed design)');
+  L.push(hr);
+  L.push('Forms: "Code 99 Note – Physician" and "RRT Note – Physician". Three sections each:');
+  L.push('  1. Event & Code Status   2. Assessment & Interventions   3. Outcome, Plan & Communication');
+  L.push('Field count: Code 99 = 13 shared + 7 = 20; RRT = 13 shared + 5 = 18 (CTX is the native Performed On).');
+  L.push('Build shared fields once (S1-S13) and reuse in both forms. Reuse existing DTAs before creating new ones.');
+  L.push('');
+  const groups = [['SHARED FIELDS (both forms)', f => f.forms.length === 2], ['CODE 99 FIELDS', f => f.forms.length === 1 && f.forms[0] === 'c99'], ['RRT FIELDS', f => f.forms.length === 1 && f.forms[0] === 'rrt']];
+  groups.forEach(([title, pred]) => {
+    L.push(title); L.push('-'.repeat(title.length));
+    FIELDS.filter(f => f.type !== 'banner' && pred(f)).forEach(f => {
+      const label = typeof f.label === 'object' ? 'Code 99: ' + f.label.c99 + ' / RRT: ' + f.label.rrt : f.label;
+      L.push((f.id + '').padEnd(5) + label);
+      L.push('     Section:  ' + f.page.replace('pg-', '') + ' — ' + f.group);
+      L.push('     Control:  ' + CONTROL_NAMES[f.type]);
+      const opts = optionListText(f);
+      if (opts) L.push('     Values:   ' + opts);
+      L.push('     Rule:     ' + (f.ruleText || (f.req ? 'Required' : 'Optional')));
+      L.push('     Consumer: ' + (f.consumer || '—'));
+      L.push('');
+    });
+  });
+  L.push('CONDITIONAL LOGIC SUMMARY');
+  L.push('-------------------------');
+  [
+    'C3 = ROSC          -> show C4, C5, S7, S9 (S8 if S7 is a transfer)',
+    'C3 = Expired       -> show C6, C7; hide S7-S9',
+    'C3 = Stabilized    -> show S7, S9 (S8 if transfer)',
+    'R5 = Yes           -> hide R4, S7-S9; note ends "Escalated to Code 99 — see Code 99 note"',
+    'R5 = No            -> show R4, S7, S9 (S8 if transfer)',
+    'S7 in ICU / Telemetry / Procedure / Transfer -> show S8 (required)',
+    'S10 = Notified     -> show S11;  S12 = Notified -> show S13',
+    '"Other" options    -> conditional free text, required when selected',
+    'C2 airway/access   -> banner: separate procedure note required',
+    'S2 = resident role -> note routes for co-signature (native workflow)',
+    'Hidden fields are excluded from the note and from required-field validation.',
+  ].forEach(x => L.push('  ' + x));
+  L.push('');
+  L.push('BUILD RULES');
+  L.push('-----------');
+  [
+    'Performed On = event time; signature time is separate and automatic (42 CFR 482.24(c)).',
+    'No defaulted clinical values; S4 code-status check is never pre-selected.',
+    'No automatic attestations (e.g., "per ACLS protocol").',
+    'Disposition does not create orders; the form places no orders.',
+    'Draft, sign, co-sign (resident authors), modify/unchart through native workflow.',
+    'Note output lists only completed, visible content; no empty headings.',
+    'Usability test: 3-5 physicians, real past case, target under 3 minutes; audit completion at 30 days.',
+  ].forEach((x, i) => L.push('  ' + (i + 1) + '. ' + x));
+  return L.join('\n');
+}
+
+function xwalkText() {
+  const L = []; const hr = '='.repeat(78);
+  L.push('DATA OWNERSHIP CROSSWALK & COMMITTEE DECISIONS (POC v0.1)');
+  L.push(hr);
+  L.push('Rule: one owner per data element. If the Recording Nurse, RRT Flow Sheet or iView records it,');
+  L.push('the physician form references it instead of re-entering it.');
+  L.push('');
+  [
+    ['Activation, arrival, ROSC, event-end times', 'Recording Nurse -> Resuscitation Record; RRT Flow Sheet', 'Not entered (CTX = event time only)'],
+    ['Initial condition and rhythm', 'Recording Nurse -> Resuscitation Record', 'Not entered'],
+    ['Medications, doses, shocks, rhythm checks', 'Resuscitation Record; MAR', 'C2 summary checklist only (optional)'],
+    ['Vital signs (initial, repeat, post-ROSC)', 'iView; RRT Flow Sheet', 'Not entered; key values in S5 text'],
+    ['RRT activation criteria', 'RRT Flow Sheet (to be aligned to policy)', 'R1 uses the policy\'s 12 criteria'],
+    ['Team roles, compressors, attendees', 'Resuscitation Record', 'S2 author role only'],
+    ['Debrief', 'Debriefing for Resuscitation Event form', 'Excluded'],
+    ['Intubation, IO, central line', 'Procedure notes', 'C2 checkbox flags procedure note'],
+    ['Reason resuscitation stopped', 'Resuscitation Record (same 3 values)', 'C6 — Team Leader decision (policy)'],
+    ['Time of death pronounced', 'Physician', 'C7'],
+    ['Immediate post-cardiac arrest assessment', 'Physician (moves from Resuscitation Record box)', 'C4, C5 + S5'],
+    ['Attending / family notification', 'Both (DECISION 2)', 'S10-S13: who and what; nurse records that/when'],
+    ['Disposition', 'Team Leader decides (policy); nurse records', 'S7, S8'],
+    ['Orders', 'CPOE', 'Never created by the form'],
+  ].forEach(r => { L.push('- ' + r[0]); L.push('    Owner:          ' + r[1]); L.push('    Physician form: ' + r[2]); });
+  L.push('');
+  L.push('GAPS FOR NURSING FORMS (outside the physician form)');
+  L.push('---------------------------------------------------');
+  [
+    'RRT Flow Sheet criteria do not match policy (flow sheet has sepsis screen and urine output; policy has chest pain, stroke symptoms, mental status, work of breathing).',
+    'Resuscitation Record compressions = None / Manual only; add Mechanical (LUCAS).',
+    'Policy has no physician documentation section.',
+    'Policy covers visitors and staff; a PowerForm needs a patient encounter (out of scope unless registered, e.g., via ED).',
+  ].forEach((x, i) => L.push('  ' + (i + 1) + '. ' + x));
+  L.push('');
+  L.push('COMMITTEE DECISIONS');
+  L.push('-------------------');
+  [
+    'Add a Physician Documentation section to the policy (author, timeframe, co-signature).',
+    'Notification overlap: nurse records that/when; physician records who/what. Drop from nursing build when iView replaces paper.',
+    'Update RRT Flow Sheet criteria to the policy\'s 12; add LUCAS to the Resuscitation Record / iView.',
+    'Resuscitation Record "Immediate Post Cardiac Arrest Assessment" box: point to physician note, or remove in iView.',
+    'Medsys: PowerForm -> Code 99 Note / RRT Note document type (Dynamic Documentation) for Progress Notes filing and co-sign routing.',
+  ].forEach((x, i) => L.push('  ' + (i + 1) + '. ' + x));
+  return L.join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Output — Generation & PHI Scan
+// ─────────────────────────────────────────────────────────────────
+
+const PHI_PATTERNS = [
+  { name: 'date', re: /\b(0?[1-9]|1[0-2])[\/-](0?[1-9]|[12]\d|3[01])([\/-]\d{2,4})?\b/ },
+  { name: 'phone number', re: /\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/ },
+  { name: 'SSN', re: /\b\d{3}-\d{2}-\d{4}\b/ },
+  { name: 'long number (MRN/FIN?)', re: /\b\d{6,}\b/ },
+];
+
+function scanForPhi(outputText) {
+  return PHI_PATTERNS.filter(p => p.re.test(outputText)).map(p => p.name);
+}
+
+const OUTPUT_BUILDERS = { note: noteText, map: mapText, xwalk: xwalkText };
+
+function generateOutput() {
+  const isNote = state.outputMode === 'note';
+  const miss = isNote ? missingFields() : [];
+  const banner = getEl('out-missing');
+  if (miss.length) {
+    banner.innerHTML = '<strong>Sign blocked — ' + miss.length + ' required field(s) missing:</strong> ' + miss.map(m => esc(m.id + ' ' + fieldLabel(m))).join(' · ');
+    banner.classList.remove('hidden');
+  } else banner.classList.add('hidden');
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('btn--primary', b.dataset.mode === state.outputMode));
+  const out = OUTPUT_BUILDERS[state.outputMode]();
+  getEl('out-ta').value = out;
+  const hits = isNote ? scanForPhi(out) : [];
+  const warn = getEl('phi-warn');
+  warn.textContent = hits.length ? '⚠ Possible PHI pattern in output (' + hits.join(', ') + '). Remove real identifiers — this POC must not contain PHI.' : '';
+  warn.classList.toggle('hidden', !hits.length);
+  getEl('btn-sign').disabled = !isNote || !state.form;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Navigation
+// ─────────────────────────────────────────────────────────────────
+
+function navigateToPage(pageId) {
+  ALL_PAGES.forEach(p => {
+    getEl(p).classList.toggle('page--active', p === pageId);
+    getEl('nav-' + p).classList.toggle('nav__item--active', p === pageId);
+  });
+  if (FORM_PAGES.includes(state.currentPage)) state.visited.add(state.currentPage);
+  if (FORM_PAGES.includes(pageId)) state.visited.add(pageId);
+  state.currentPage = pageId;
+  getEl('content').scrollTop = 0;
+  if (pageId === 'pg-out') generateOutput();
+  refresh();
+}
+
+function unlockNav(includeForm) {
+  ALL_PAGES.forEach(p => {
+    const locked = FORM_PAGES.includes(p) && !includeForm;
+    getEl('nav-' + p).classList.toggle('nav__item--locked', locked);
+  });
+}
+
+function hideLanding() {
+  getEl('landing-overlay').classList.add('hidden');
+  getEl('btn-gen').classList.remove('hidden');
+}
+
+function startForm(form, carry = {}) {
+  state.form = form;
+  state.vals = { ...carry };
+  state.visited = new Set();
+  state.showMissing = false;
+  state.signed = false;
+  state.outputMode = 'note';
+  hideLanding();
+  renderForm();
+  unlockNav(true);
+  navigateToPage('pg-1');
+}
+
+function openSpecOnly() {
+  hideLanding();
+  unlockNav(Boolean(state.form));
+  if (!state.form) {
+    getEl('mode-note').classList.add('hidden');
+    getEl('btn-sign').classList.add('hidden');
+    getEl('btn-back-form').classList.add('hidden');
+    getEl('btn-gen').classList.add('hidden');
+  }
+  state.outputMode = 'map';
+  navigateToPage('pg-out');
+}
+
+function resetApplication() {
+  state.form = null; state.vals = {}; state.visited = new Set();
+  state.showMissing = false; state.signed = false; state.outputMode = 'note'; state.currentPage = null;
+  ['body-1', 'body-2', 'body-3'].forEach(id => { getEl(id).innerHTML = ''; });
+  ALL_PAGES.forEach(p => {
+    getEl(p).classList.remove('page--active');
+    getEl('nav-' + p).classList.remove('nav__item--done', 'nav__item--pending', 'nav__item--active');
+    getEl('nav-' + p).classList.add('nav__item--locked');
+  });
+  FORM_PAGES.forEach(p => { getEl('ct-' + p).textContent = ''; });
+  getEl('nav-form-hdr').textContent = 'PowerForm';
+  getEl('tb-title').textContent = 'Code 99 / RRT Physician PowerForms — POC v0.1';
+  getEl('sb-form').textContent = 'No form open';
+  getEl('sb-miss-wrap').classList.add('hidden');
+  ['btn-demo', 'btn-gen'].forEach(id => getEl(id).classList.add('hidden'));
+  closeModals();
+  getEl('landing-overlay').classList.remove('hidden');
+  showToast('Session cleared');
+}
+
+function closeModals() { document.querySelectorAll('.modal-overlay--open').forEach(m => m.classList.remove('modal-overlay--open')); }
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Actions (dispatch map)
+// ─────────────────────────────────────────────────────────────────
+
+function signReview() {
+  state.showMissing = true;
+  state.outputMode = 'note';
+  navigateToPage('pg-out');
+}
+
+function signNote() {
+  const miss = missingFields();
+  if (miss.length) { state.showMissing = true; refresh(); showToast('Sign blocked — complete required fields'); return; }
+  state.signed = true;
+  refresh();
+  const cosign = RESIDENT_ROLES.includes(state.vals.S2) ? ' Routed for co-signature.' : '';
+  showToast('Signed (simulated).' + cosign);
+}
+
+function escalateToCode99() {
+  const carry = {};
+  ['S1', 'S1.other', 'S2', 'S3', 'S3.other', 'S4'].forEach(k => { if (state.vals[k] !== undefined) carry[k] = state.vals[k]; });
+  startForm('c99', carry);
+  showToast('Code 99 note started — location, role and code status carried over');
+}
+
+function loadDemo() {
+  state.vals = JSON.parse(JSON.stringify(DEMO[state.form]));
+  state.signed = false;
+  renderForm();
+  FORM_PAGES.forEach(p => state.visited.add(p));
+  refresh();
+  showToast('Demo case loaded (fictional)');
+}
+
+async function copyOutput() {
+  const ta = getEl('out-ta');
+  try {
+    await navigator.clipboard.writeText(ta.value);
+    showToast('Copied');
+  } catch (err) {
+    console.error('[copyOutput] clipboard API failed, using fallback:', err);
+    ta.select();
+    const ok = document.execCommand('copy');
+    showToast(ok ? 'Copied' : 'Copy failed — select the text and copy manually');
+  }
+}
+
+const ACTIONS = {
+  'confirm-ack': () => getEl('ack-overlay').classList.remove('ack-overlay--open'),
+  'dismiss-expiry-warn': () => getEl('expiry-warn').classList.remove('expiry-warn-bar--show'),
+  'open-modal': t => getEl(t.dataset.modal).classList.add('modal-overlay--open'),
+  'close-modal': closeModals,
+  'confirm-reset': () => getEl('resetM').classList.add('modal-overlay--open'),
+  'do-reset': resetApplication,
+  'start': t => startForm(t.dataset.form),
+  'open-spec': openSpecOnly,
+  'nav-page': t => { if (!t.classList.contains('nav__item--locked')) navigateToPage(t.dataset.pageId); },
+  'go': t => navigateToPage(t.dataset.page),
+  'sign-review': signReview,
+  'sign': signNote,
+  'set-mode': t => { state.outputMode = t.dataset.mode; generateOutput(); },
+  'back-to-form': () => navigateToPage('pg-3'),
+  'escalate': escalateToCode99,
+  'load-demo': loadDemo,
+  'print': () => window.print(),
+  'copy-output': copyOutput,
+};
+
+function onClick(ev) {
+  const t = ev.target.closest('[data-action]');
+  if (!t) { if (ev.target.classList.contains('modal-overlay')) closeModals(); return; }
+  const action = ACTIONS[t.dataset.action];
+  if (action) action(t);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION: Init
+// ─────────────────────────────────────────────────────────────────
+
+function init() {
+  const now = new Date();
+  if (now > EXPIRY) { getEl('expiry-overlay').classList.add('expiry-overlay--open'); return; }
+  if ((EXPIRY - now) / 864e5 <= WARN_DAYS) getEl('expiry-warn').classList.add('expiry-warn-bar--show');
+  const content = getEl('content');
+  content.addEventListener('change', onFieldEvent);
+  content.addEventListener('input', ev => { if (ev.target.matches('.inp, .ta')) onFieldEvent(ev); });
+  getEl('ack-checkbox').addEventListener('change', e => { getEl('ack-btn').disabled = !e.target.checked; });
+  document.addEventListener('click', onClick);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
+  getEl('ack-overlay').classList.add('ack-overlay--open');
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
