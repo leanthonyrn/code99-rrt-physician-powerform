@@ -220,7 +220,7 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
     <div class="ack-box__body">
       <p><strong>This is a design proof of concept, not a clinical documentation tool.</strong> It shows the proposed Oracle Health physician PowerForms <em>Code 99 Note – Physician</em> and <em>RRT Note – Physician</em> for review by a resuscitation (Code 99 / RRT) committee. Adapt field values to your organization's policy.</p>
       <p><strong>Never enter:</strong> patient names, dates of birth, MRN/FIN, dates, or real staff or family names. Use the demo case or fictional text.</p>
-      <p style="font-size:var(--fs-xs);color:var(--muted)">Field IDs (S1–S13 shared, S4 removed; C1–C7 Code 99, R1–R5 RRT) match the design spec. Items marked <span class="dec-badge">DECISION</span> are choices each adopting organization should make. Build feasibility must be confirmed by the Oracle Health build team.</p>
+      <p style="font-size:var(--fs-xs);color:var(--muted)">Field IDs (S shared, C1–C7 Code 99, R1–R5 RRT) match the design spec. Items marked <span class="dec-badge">DECISION</span> are choices each adopting organization should make. Build feasibility must be confirmed by the Oracle Health build team.</p>
     </div>
     <div class="ack-box__foot">
       <label class="ack-chk-row"><input type="checkbox" id="ack-checkbox"> I understand this is a POC and I will not enter PHI.</label>
@@ -384,7 +384,7 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
     <p><strong>Added or changed:</strong></p>
     <ul>
       <li>S2 author role (team leader / responding resident; reduces role confusion).</li>
-      <li>S3 code status adds Unknown and is never pre-selected; the order-match check (S4) was removed per committee review.</li>
+      <li>S3 code status adds Unknown and is never pre-selected; the active-order match question was removed per committee review.</li>
       <li>C1 uses a standard Code 99 definition; R1 uses 12 common RRT activation criteria.</li>
       <li>C2 includes mechanical CPR (LUCAS); airway and access items flag a separate procedure note.</li>
       <li>C4/C5 immediate post-cardiac arrest assessment as two pick lists.</li>
@@ -456,7 +456,7 @@ const RESPONSE_AREAS = [
 /**
  * @typedef  {Object} FieldDef
  * @description One PowerForm control (DTA) or an in-form banner (type 'banner').
- * @property {string}   id         - Field ID: CTX, S1-S13, C1-C7, R1-R5, or banner key
+ * @property {string}   id         - Field ID: CTX, S fields, C1-C7, R1-R5, or banner key
  * @property {string[]} forms      - Forms that show it: 'c99' and/or 'rrt'
  * @property {string}   page       - pg-1 | pg-2 | pg-3
  * @property {string}   group      - Box heading within the section
@@ -528,8 +528,6 @@ const FIELDS = [
     options: [{ v: 'full', t: 'Full Code' }, { v: 'dnr', t: 'DNR' }, { v: 'dni', t: 'DNI' }, { v: 'dnrdni', t: 'DNR + DNI' }, { v: 'unknown', t: 'Unknown' }],
     hint: 'Never pre-selected. Use Unknown when code status cannot be determined.',
     ruleText: 'Required', consumer: 'Note; resuscitation decision defensibility; quality review' },
-  // S4 (matches active code status order) removed per committee 11/2026 — discrepancies are a quality review item.
-
   // ── Section 2: Assessment & Interventions ──
   { id: 'C2', forms: C99, page: 'pg-2', group: 'Interventions', type: 'check', cols: 2,
     label: 'Key interventions directed',
@@ -1074,8 +1072,8 @@ function mapText() {
   L.push(hr);
   L.push('Forms: "Code 99 Note – Physician" and "RRT Note – Physician". Three sections each:');
   L.push('  1. Event & Code Status   2. Assessment & Interventions   3. Outcome, Plan & Communication');
-  L.push('Field count: Code 99 = 12 shared + 7 = 19; RRT = 12 shared + 5 = 17 (CTX = event start time, native Performed On; S4 removed 11/2026).');
-  L.push('Build shared fields once (S1-S3, S5-S13) and reuse in both forms. Reuse existing DTAs before creating new ones.');
+  L.push('Field count: Code 99 = 12 shared + 7 = 19; RRT = 12 shared + 5 = 17 (CTX = event start time, native Performed On).');
+  L.push('Build shared fields once (S fields) and reuse in both forms. Reuse existing DTAs before creating new ones.');
   L.push('');
   const groups = [['SHARED FIELDS (both forms)', f => f.forms.length === 2], ['CODE 99 FIELDS', f => f.forms.length === 1 && f.forms[0] === 'c99'], ['RRT FIELDS', f => f.forms.length === 1 && f.forms[0] === 'rrt']];
   groups.forEach(([title, pred]) => {
