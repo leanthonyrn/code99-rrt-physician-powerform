@@ -8,16 +8,16 @@ This is the physician companion to the nursing [Code Blue and Rapid Response Pos
 
 ## What it demonstrates
 
-- **Minimum data set.** Each field names who uses its data. Anything the Recording Nurse, the RRT flow sheet or iView already records is referenced, not typed again. The Code 99 form has 20 fields and the RRT form has 18. Many of them appear only when they apply, so a typical note takes about 12–14 entries, three of them free text.
-- **Shared fields, separate forms.** Thirteen shared fields (S1–S13) are built once and used in both forms. There are 7 Code 99 fields (C1–C7) and 5 RRT fields (R1–R5). A code and a rapid response are never combined into one record.
+- **Minimum data set.** Each field names who uses its data. Anything the Recording Nurse, the RRT flow sheet or iView already records is referenced, not typed again. The Code 99 form has 19 fields and the RRT form has 17. Many of them appear only when they apply, so a typical note takes about 12–14 entries, three of them free text.
+- **Shared fields, separate forms.** Twelve shared fields are built once and used in both forms. There are 7 Code 99 fields (C1–C7) and 5 RRT fields (R1–R5). A code and a rapid response are never combined into one record.
 - **Conditional logic like a PowerForm.**
   - ROSC shows the immediate post-cardiac-arrest assessment, disposition and plan.
   - Expired shows the reason resuscitation stopped and the time of death.
-  - On the RRT note, escalation to Code 99 ends the note and opens the Code 99 note with location, role and code status already filled in.
+  - On the RRT note, escalation to Code 99 ends the note; the provider then completes a separate Code 99 note.
   - Choosing "Other" opens a text box that becomes required.
 - **Documentation integrity.**
-  - The event time (PowerForm "Performed on") is kept separate from the signature time.
-  - The code status check is never pre-selected.
+  - The event start time (PowerForm "Performed on") is kept separate from the signature time.
+  - Code status is never pre-selected and includes Unknown.
   - The form never adds an attestation the physician didn't make, and it places no orders.
   - Airway and vascular access items flag that a separate procedure note is required.
 - **Three output views.**
@@ -38,7 +38,7 @@ Runs entirely in your browser. No PHI is collected, transmitted or stored. There
 
 ## Status
 
-Version 0.1, a proof of concept for committee review. It is not validated and not a medical record. Final field definitions, policy language and Oracle Health build feasibility are still pending. This version expires May 31, 2027.
+Version 0.2, a proof of concept for committee review. It is not validated and not a medical record. Final field definitions, policy language and Oracle Health build feasibility are still pending. This version expires May 31, 2027.
 
 ## Use, forking and contributions
 

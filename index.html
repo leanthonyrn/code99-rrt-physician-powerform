@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <!--
-  @file        index.html (Code99_RRT_Physician_PowerForm_POC_v0.1)
-  @version     0.1.0 (Proof of Concept)
+  @file        index.html (Code99_RRT_Physician_PowerForm_POC_v0.2)
+  @version     0.2.0 (Proof of Concept)
   @description Physician post-event documentation for Code 99 and Rapid Response (RRT), built as two
-               Oracle Health PowerForms that share one set of fields. Implements the committee-confirmed
+               Oracle Health PowerForms that share one set of fields. Implements the reviewed
                design (sections 2-4): 13 shared fields, 7 Code 99 fields, 5 RRT fields. Physician
                decisions only; times, medications, shocks, vital signs, roles and debrief stay on the
                Resuscitation Record, RRT Documentation Flow Sheet, iView and the Debrief form.
-               Aligned to SJMC Code 99 and Rapid Response policy (rev. 09/2026).
+               Field values follow a typical hospital Code 99 / Rapid Response policy; adapt to local policy.
   @author      LeAnthony Mathews, RN, MBA-IT, MS-I, CPHIMS
   @contact     leanthonyrn@gmail.com
   @created     2026-11-13
@@ -210,7 +210,7 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
     <div class="expiry-box__icon">&#9888;</div>
     <div class="expiry-box__title">This Version Has Expired</div>
     <div class="expiry-box__body">This proof of concept is time-limited while the Code 99 / RRT physician documentation moves through committee review and change control. This version expired on May 31, 2027.</div>
-    <div class="expiry-box__contact">Contact Nursing Informatics for the current version.</div>
+    <div class="expiry-box__contact">Check the GitHub repository for the current version.</div>
   </div>
 </div>
 
@@ -218,9 +218,9 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
   <div class="ack-box">
     <div class="ack-box__hdr" id="ack-hdr">&#128274; Privacy &amp; POC Acknowledgment — Required Before Proceeding</div>
     <div class="ack-box__body">
-      <p><strong>This is a design proof of concept, not a clinical documentation tool.</strong> It shows the proposed Oracle Health physician PowerForms <em>Code 99 Note – Physician</em> and <em>RRT Note – Physician</em> for review by the Code 99 / RRT Committee, aligned to the SJMC Code 99 and Rapid Response policy (rev. 09/2026).</p>
+      <p><strong>This is a design proof of concept, not a clinical documentation tool.</strong> It shows the proposed Oracle Health physician PowerForms <em>Code 99 Note – Physician</em> and <em>RRT Note – Physician</em> for review by a resuscitation (Code 99 / RRT) committee. Adapt field values to your organization's policy.</p>
       <p><strong>Never enter:</strong> patient names, dates of birth, MRN/FIN, dates, or real staff or family names. Use the demo case or fictional text.</p>
-      <p style="font-size:var(--fs-xs);color:var(--muted)">Field IDs (S1–S13 shared, C1–C7 Code 99, R1–R5 RRT) match the committee design. Items marked <span class="dec-badge">DECISION</span> are pending committee decisions. Build feasibility must be confirmed by the Oracle Health build team.</p>
+      <p style="font-size:var(--fs-xs);color:var(--muted)">Field IDs (S1–S13 shared, S4 removed; C1–C7 Code 99, R1–R5 RRT) match the design spec. Items marked <span class="dec-badge">DECISION</span> are choices each adopting organization should make. Build feasibility must be confirmed by the Oracle Health build team.</p>
     </div>
     <div class="ack-box__foot">
       <label class="ack-chk-row"><input type="checkbox" id="ack-checkbox"> I understand this is a POC and I will not enter PHI.</label>
@@ -237,10 +237,10 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
 </div>
 
 <header class="toolbar">
-  <span class="toolbar__value" id="tb-title">Code 99 / RRT Physician PowerForms — POC v0.1</span>
+  <span class="toolbar__value" id="tb-title">Code 99 / RRT Physician PowerForms — POC v0.2</span>
   <span class="toolbar__actions">
     <button class="btn btn--sm hidden" id="btn-demo" type="button" data-action="load-demo">&#9998; Load Demo Case</button>
-    <button class="btn btn--sm" type="button" data-action="open-modal" data-modal="decM">&#9878; Committee Decisions</button>
+    <button class="btn btn--sm" type="button" data-action="open-modal" data-modal="decM">&#9878; Design Notes</button>
     <button class="btn btn--sm" type="button" data-action="open-modal" data-modal="aboutM">&#8505; What Changed</button>
     <button class="btn btn--sm" type="button" data-action="confirm-reset">&#8635; New Session</button>
     <button class="btn btn--sm btn--primary hidden" id="btn-gen" type="button" data-action="sign-review">&#10004; Sign / Review</button>
@@ -249,7 +249,7 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
 
 <div id="landing-overlay" class="landing-overlay">
   <div class="landing__inner">
-    <div class="landing__brand">Saint Joseph's Medical Center · Nursing Informatics · Proof of Concept for Code 99 / RRT Committee Review</div>
+    <div class="landing__brand">Nursing Informatics · Open-Source Proof of Concept · Resuscitation Documentation Design</div>
     <div class="landing__title">Physician Post-Event Documentation — Code 99 &amp; Rapid Response</div>
     <div class="landing__subtitle">Two PowerForms · one set of shared fields · three sections · physician decisions only · nursing records stay the source for times, medications, shocks and vital signs</div>
     <div class="banner banner--teal" style="text-align:left">
@@ -259,24 +259,24 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
       <button class="lc" type="button" data-action="start" data-form="c99">
         <div class="lc__icon">&#10010;</div>
         <div class="lc__title">Code 99 Note – Physician</div>
-        <div class="lc__desc">Team Leader documents reason, code status check, clinical course, impression, outcome (ROSC / expired / stabilized), disposition and notifications.</div>
+        <div class="lc__desc">Team Leader documents reason, code status, clinical course, impression, outcome (ROSC / expired / stabilized), disposition and notifications.</div>
         <span class="lc__cta">Start &rsaquo;</span>
       </button>
       <button class="lc lc--rrt" type="button" data-action="start" data-form="rrt">
         <div class="lc__icon">&#9889;</div>
         <div class="lc__title">RRT Note – Physician</div>
-        <div class="lc__desc">Responding resident documents the policy criteria met, focused assessment, impression, response, escalation to Code 99, disposition and plan.</div>
+        <div class="lc__desc">Responding resident documents the activation criteria met, focused assessment, impression, response, escalation to Code 99, disposition and plan.</div>
         <span class="lc__cta">Start &rsaquo;</span>
       </button>
       <button class="lc lc--plain" type="button" data-action="open-spec">
         <div class="lc__icon">&#128438;</div>
         <div class="lc__title">Build Map &amp; Crosswalk</div>
-        <div class="lc__desc">Field-by-field PowerForm spec (control, values, conditional rule, data consumer), data-ownership crosswalk and committee decisions.</div>
+        <div class="lc__desc">Field-by-field PowerForm spec (control, values, conditional rule, data consumer), data-ownership crosswalk and design notes.</div>
         <span class="lc__cta">Open &rsaquo;</span>
       </button>
     </div>
     <div class="landing__footer">
-      Lead: LeAnthony Mathews, Director, Nursing Informatics &nbsp;|&nbsp; For: Code 99 / RRT Committee &nbsp;|&nbsp; No PHI collected or stored &nbsp;|&nbsp; Draft — November 2026
+      Author: LeAnthony Mathews, RN, MBA-IT, MS-I, CPHIMS &nbsp;|&nbsp; MIT License &nbsp;|&nbsp; No PHI collected or stored &nbsp;|&nbsp; Draft — November 2026
     </div>
   </div>
 </div>
@@ -320,7 +320,7 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
     <span class="output-mode-bar__label">VIEW:</span>
     <button class="btn btn--sm" type="button" data-action="set-mode" data-mode="note" id="mode-note">Physician Note</button>
     <button class="btn btn--sm" type="button" data-action="set-mode" data-mode="map">Build Map (PowerForm Spec)</button>
-    <button class="btn btn--sm" type="button" data-action="set-mode" data-mode="xwalk">Ownership Crosswalk &amp; Decisions</button>
+    <button class="btn btn--sm" type="button" data-action="set-mode" data-mode="xwalk">Ownership Crosswalk &amp; Design Notes</button>
   </div>
   <div class="phi-scan-warn hidden" id="phi-warn"></div>
   <textarea class="output-ta" id="out-ta" readonly aria-label="Generated output"></textarea>
@@ -340,32 +340,35 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
   <span class="statusbar__privacy">&#128274; No PHI · browser only</span>
   <span id="sb-form">No form open</span>
   <span id="sb-miss-wrap" class="hidden">Required missing: <span class="statusbar__miss" id="sb-miss">—</span></span>
-  <span class="statusbar__credit">Nursing Informatics · SJMC · POC v0.1 · Nov 2026</span>
+  <span class="statusbar__credit">Open-source POC v0.2 · MIT · Nov 2026</span>
 </footer>
 
 </div></div>
 
 <div class="modal-overlay" id="decM"><div class="modal modal--wide">
-  <div class="modal__header">Decisions for the Code 99 / RRT Committee <button class="btn--modal-close" type="button" data-action="close-modal">&times;</button></div>
+  <div class="modal__header">Design Notes for Adopting Organizations <button class="btn--modal-close" type="button" data-action="close-modal">&times;</button></div>
   <div class="modal__body">
-    <p><strong>1. Add a "Physician Documentation" section to the policy</strong> <span class="dec-badge">DECISION</span><br>
-      The 09/2026 policy names only the Resuscitation Record and the RRT Flow Sheet. Proposed: "The Team Leader completes the Code 99 Note – Physician in the EHR, and the responding resident completes the RRT Note – Physician, before the end of the shift (or within 24 hours). Notes written by residents are co-signed by the hospitalist or attending per GME policy."</p>
-    <p><strong>2. Attending and family notification on two records</strong> <span class="dec-badge">DECISION</span><br>
-      Both the Resuscitation Record and this note record notification. Recommended: the nurse records that it happened and when; the physician records who was told and what. Accept the overlap until iView replaces the paper record, then drop it from the nursing build.</p>
-    <p><strong>3. Nursing form alignment</strong> <span class="dec-badge">DECISION</span><br>
-      Update the RRT Flow Sheet activation criteria to the policy's 12 criteria (R1 already uses them). Add "Mechanical (LUCAS)" compressions to the Resuscitation Record / iView.</p>
-    <p><strong>4. Immediate Post Cardiac Arrest Assessment box</strong> <span class="dec-badge">DECISION</span><br>
-      The physician note now owns it (C4, C5, S5). Leave the Resuscitation Record box with "see physician note", or remove it in the iView version.</p>
-    <p><strong>5. Build question for Medsys</strong> <span class="dec-badge">DECISION</span><br>
-      PowerForm results land in Form Browser. Confirm whether these PowerForms should feed a "Code 99 Note" / "RRT Note" document type (Dynamic Documentation) so they file with physician Progress Notes and support co-signature routing. The field list does not change.</p>
+    <p>Choices each organization should settle before building. Items marked <span class="dec-badge">DECISION</span> appear in the form.</p>
+    <p><strong>1. Put physician documentation in the policy</strong> <span class="dec-badge">DECISION</span><br>
+      Many Code 99 / RRT policies name only the nursing records (resuscitation record, RRT flow sheet). State who completes each physician note (Team Leader for Code 99, responding resident for RRT), the timeframe (for example, before end of shift or within 24 hours) and co-signature rules for residents.</p>
+    <p><strong>2. One owner per data element</strong> <span class="dec-badge">DECISION</span><br>
+      Attending and family notification often appears on both the nursing resuscitation record and the physician note. A workable split: the nurse records that it happened and when; the physician records who was told and what.</p>
+    <p><strong>3. Align nursing and physician value lists</strong><br>
+      Use the same RRT activation criteria on the nursing flow sheet and the physician form (R1), and the same reasons for stopping resuscitation (C6). Make sure the resuscitation record offers mechanical CPR (e.g., LUCAS) as well as manual.</p>
+    <p><strong>4. Post-cardiac arrest assessment</strong><br>
+      If the paper resuscitation record has a free-text post-arrest assessment box, decide whether the physician note (C4, C5) replaces it.</p>
+    <p><strong>5. PowerForm vs. note document type</strong> <span class="dec-badge">DECISION</span><br>
+      PowerForm results land in Form Browser. Confirm with your build team whether the PowerForms should feed a "Code 99 Note" / "RRT Note" document type (Dynamic Documentation) so they file with physician progress notes and support co-signature routing. The field list does not change.</p>
+    <p><strong>6. Events for visitors and staff</strong><br>
+      A PowerForm needs a patient encounter, so events for unregistered visitors or staff are out of scope unless the person is registered (e.g., through the ED).</p>
   </div>
   <div class="modal__footer"><button class="btn" type="button" data-action="close-modal">Close</button></div>
 </div></div>
 
 <div class="modal-overlay" id="aboutM"><div class="modal modal--wide">
-  <div class="modal__header">What Changed from the Proposed Templates (11/9/26) <button class="btn--modal-close" type="button" data-action="close-modal">&times;</button></div>
+  <div class="modal__header">What Changed from Typical Paper Templates <button class="btn--modal-close" type="button" data-action="close-modal">&times;</button></div>
   <div class="modal__body">
-    <p><strong>Kept:</strong> two separate physician forms (Code 99 and RRT), the committee's section order, structured choices with narrative for reasoning.</p>
+    <p><strong>Kept:</strong> two separate physician forms (Code 99 and RRT), the usual section order, structured choices with narrative for reasoning.</p>
     <p><strong>Removed (recorded elsewhere or redundant):</strong></p>
     <ul>
       <li>Separate date and time fields → PowerForm "Performed on" is the event time; signing records documentation time.</li>
@@ -376,13 +379,13 @@ button.lc:hover{border-color:var(--blue);background:#f0f6ff}
       <li>Printed "per current ACLS/PALS protocol" sentence → no automatic attestations.</li>
       <li>Mental status and airway pick lists, four exam boxes, four intervention groups, separate differential / response / monitoring boxes → one assessment, one impression, one plan.</li>
       <li>Supervising attending signature lines → native co-signature routing.</li>
-      <li>Debrief items → Debriefing for Resuscitation Event form.</li>
+      <li>Debrief items → the debrief form.</li>
     </ul>
     <p><strong>Added or changed:</strong></p>
     <ul>
-      <li>S2 author role (policy roles; addresses role confusion).</li>
-      <li>S4 code status checked against the active order — never pre-selected.</li>
-      <li>C1 uses the policy's Code 99 definition; R1 uses the policy's 12 RRT criteria.</li>
+      <li>S2 author role (team leader / responding resident; reduces role confusion).</li>
+      <li>S3 code status adds Unknown and is never pre-selected; the order-match check (S4) was removed per committee review.</li>
+      <li>C1 uses a standard Code 99 definition; R1 uses 12 common RRT activation criteria.</li>
       <li>C2 includes mechanical CPR (LUCAS); airway and access items flag a separate procedure note.</li>
       <li>C4/C5 immediate post-cardiac arrest assessment as two pick lists.</li>
       <li>C6 reason resuscitation stopped uses the Resuscitation Record values; C7 time of death pronounced.</li>
@@ -430,11 +433,11 @@ const FORM_META = {
 const TRANSFER_DISPOSITIONS = ['icu', 'tele', 'proc', 'xfer'];
 const RESIDENT_ROLES = ['tl-res', 'resp-res'];
 
-const POLICY_AREAS = [
-  '7th Floor – ICU / Stepdown', '6th Floor – Hall 6 / Dialysis', '5th Floor – Hall 5 / Clinical Lab',
-  '4th Floor – Cardiology / Respiratory Therapy', '3rd Floor – Hall 3 / Wound Care', '2nd Floor – Hall 2 / Cafeteria',
-  '1st Floor – Admitting / Registration / Lobby', '1st Floor – Perioperative', 'Ground Floor – Radiology / Pharmacy / Central Supply',
-  'Basement', 'Emergency Department',
+// Generic response areas — replace with your organization's units.
+const RESPONSE_AREAS = [
+  'Medical-surgical unit', 'ICU / step-down', 'Telemetry', 'Emergency Department', 'Perioperative / PACU',
+  'Radiology / imaging', 'Dialysis', 'Procedural area (cath lab / IR / endoscopy)', 'Behavioral health',
+  'Public area (lobby / cafeteria)',
 ];
 
 // ─────────────────────────────────────────────────────────────────
@@ -453,7 +456,7 @@ const POLICY_AREAS = [
 /**
  * @typedef  {Object} FieldDef
  * @description One PowerForm control (DTA) or an in-form banner (type 'banner').
- * @property {string}   id         - Committee ID: CTX, S1-S13, C1-C7, R1-R5, or banner key
+ * @property {string}   id         - Field ID: CTX, S1-S13, C1-C7, R1-R5, or banner key
  * @property {string[]} forms      - Forms that show it: 'c99' and/or 'rrt'
  * @property {string}   page       - pg-1 | pg-2 | pg-3
  * @property {string}   group      - Box heading within the section
@@ -484,20 +487,20 @@ const isSurvivedPath = (V, form) => (form === 'c99' ? ['rosc', 'stabilized'].inc
 const FIELDS = [
   // ── Section 1: Event & Code Status ──
   { id: 'CTX', forms: BOTH, page: 'pg-1', group: 'Event', type: 'time', req: true,
-    label: 'Event time ("Performed on")',
-    hint: 'Native PowerForm header, not a new DTA. Performed On = when the event happened; signing records when the note was written (42 CFR 482.24(c)). Date auto-populates.',
-    ruleText: 'Required. Native Performed On date/time', consumer: 'Note header; event vs documentation time; quality review' },
+    label: 'Event start time',
+    hint: 'Approximate time is acceptable. Maps to the native PowerForm Performed On date/time; signing records documentation time separately (42 CFR 482.24(c)). Date auto-populates.',
+    ruleText: 'Required; approximate OK. Native Performed On date/time', consumer: 'Note header; event vs documentation time; quality review' },
   { id: 'S1', forms: BOTH, page: 'pg-1', group: 'Event', type: 'select',
     label: 'Event location — only if different from the patient\'s unit',
-    options: POLICY_AREAS.map((a, i) => ({ v: 'loc' + i, t: a })).concat([{ v: 'other', t: 'Other', other: true }]),
-    hint: 'Response areas from the policy. Leave blank when the event happened on the patient\'s assigned unit.',
+    options: RESPONSE_AREAS.map((a, i) => ({ v: 'loc' + i, t: a })).concat([{ v: 'other', t: 'Other', other: true }]),
+    hint: 'Generic response areas — replace with your units. Leave blank when the event happened on the patient\'s assigned unit.',
     ruleText: 'Optional', consumer: 'Quality review (event location); note header' },
   { id: 'S2', forms: BOTH, page: 'pg-1', group: 'Event', type: 'radio', req: true,
     label: 'Your role',
     options: [
       { v: 'tl-res', t: 'Team Leader – senior resident' }, { v: 'tl-att', t: 'Team Leader – hospitalist / attending' },
       { v: 'resp-res', t: 'Responding resident' }, { v: 'primary', t: 'Primary physician' }],
-    hint: 'Policy: the senior resident leads until the hospitalist or attending arrives.',
+    hint: 'Common model: the senior resident leads until the hospitalist or attending arrives.',
     ruleText: 'Required', consumer: 'Co-signature routing; quality review (who led)' },
   { id: 'b-cosign', forms: BOTH, page: 'pg-1', group: 'Event', type: 'banner', tone: 'info',
     show: V => RESIDENT_ROLES.includes(V.S2),
@@ -506,7 +509,7 @@ const FIELDS = [
   { id: 'C1', forms: C99, page: 'pg-1', group: 'Reason for activation', type: 'radio', req: true,
     label: 'Code 99 activated for',
     options: [{ v: 'cardiac', t: 'Cardiac arrest' }, { v: 'resp', t: 'Respiratory arrest' }, { v: 'other', t: 'Other immediately life-threatening condition', other: true }],
-    hint: 'Policy definition of Code 99. Initial rhythm is recorded by the Recording Nurse.',
+    hint: 'Common Code 99 definition. Initial rhythm is recorded by the Recording Nurse.',
     ruleText: 'Required', consumer: 'Note; quality review (arrest vs non-arrest events)' },
   { id: 'R1', forms: RRT, page: 'pg-1', group: 'Reason for activation', type: 'check', req: true, cols: 2,
     label: 'RRT criteria met (select all)',
@@ -517,21 +520,15 @@ const FIELDS = [
       { v: 'sz', t: 'New seizure or acute neurologic deterioration' }, { v: 'stroke', t: 'New-onset stroke symptoms' },
       { v: 'cp', t: 'Acute or concerning chest pain' }, { v: 'bleed', t: 'Significant uncontrolled bleeding' },
       { v: 'concern', t: 'Staff concern (criteria not met)' }, { v: 'other', t: 'Other significant acute deterioration', other: true }],
-    hint: 'The policy\'s 12 activation criteria. The RRT Flow Sheet should be updated to the same list.',
-    ruleText: 'Required, at least one', consumer: 'Note; RRT trigger reporting (matches policy)' },
+    hint: '12 common RRT activation criteria. Use the same list on the nursing RRT flow sheet.',
+    ruleText: 'Required, at least one', consumer: 'Note; RRT trigger reporting (matches nursing flow sheet)' },
 
   { id: 'S3', forms: BOTH, page: 'pg-1', group: 'Code status', type: 'radio', req: true,
     label: 'Code status at the time of the event',
-    options: [{ v: 'full', t: 'Full Code' }, { v: 'dnr', t: 'DNR' }, { v: 'dni', t: 'DNI' }, { v: 'dnrdni', t: 'DNR + DNI' }, { v: 'other', t: 'Other limitation', other: true }],
+    options: [{ v: 'full', t: 'Full Code' }, { v: 'dnr', t: 'DNR' }, { v: 'dni', t: 'DNI' }, { v: 'dnrdni', t: 'DNR + DNI' }, { v: 'unknown', t: 'Unknown' }],
+    hint: 'Never pre-selected. Use Unknown when code status cannot be determined.',
     ruleText: 'Required', consumer: 'Note; resuscitation decision defensibility; quality review' },
-  { id: 'S4', forms: BOTH, page: 'pg-1', group: 'Code status', type: 'radio', req: true,
-    label: 'Matches the active code status order?',
-    options: [{ v: 'yes', t: 'Yes' }, { v: 'disc', t: 'Discrepancy – addressed' }, { v: 'unable', t: 'Unable to verify' }],
-    hint: 'Never pre-selected. Policy: resuscitate unless a valid order limiting resuscitation is in effect.',
-    ruleText: 'Required; never defaulted', consumer: 'Note; code-status compliance audit' },
-  { id: 'b-disc', forms: BOTH, page: 'pg-1', group: 'Code status', type: 'banner', tone: 'warn',
-    show: V => V.S4 === 'disc',
-    html: (V, f) => 'Discrepancy: describe how it was reconciled in the <strong>' + (f === 'c99' ? 'Clinical course' : 'Focused assessment') + '</strong> (section 2), per institutional policy.' },
+  // S4 (matches active code status order) removed per committee 11/2026 — discrepancies are a quality review item.
 
   // ── Section 2: Assessment & Interventions ──
   { id: 'C2', forms: C99, page: 'pg-2', group: 'Interventions', type: 'check', cols: 2,
@@ -548,7 +545,7 @@ const FIELDS = [
     options: [
       { v: 'abg', t: 'ABG' }, { v: 'cxr', t: 'Chest X-ray' }, { v: 'o2', t: 'O₂ escalation / BiPAP' }, { v: 'ecg', t: 'ECG' },
       { v: 'fluid', t: 'IV fluid bolus' }, { v: 'labs', t: 'Labs' }, { v: 'meds', t: 'Medications' },
-      { v: 'sepsis', t: 'Sepsis protocol initiated' }, { v: 'stroke', t: 'Stroke code (Code Gray)' },
+      { v: 'sepsis', t: 'Sepsis protocol initiated' }, { v: 'stroke', t: 'Stroke code' },
       { v: 'other', t: 'Other', other: true }, { v: 'none', t: 'None beyond assessment', exclusive: true }],
     hint: 'Same values as the RRT Flow Sheet. Orders are still entered in CPOE.',
     ruleText: 'Optional; "None" clears other selections', consumer: 'Next physician reading the note (summary)' },
@@ -593,10 +590,10 @@ const FIELDS = [
     hint: 'Same values as the Resuscitation Record. Explain the decision in the clinical course.',
     ruleText: 'Conditional: C3 = Expired', consumer: 'Note; mortality review; matches Resuscitation Record' },
   { id: 'C7', forms: C99, page: 'pg-3', group: 'Outcome', type: 'time', req: true,
-    label: 'Time of death pronounced',
+    label: 'Date/time of death pronounced',
     show: V => V.C3 === 'expired',
-    hint: 'Pronounced by the signing physician. Not taken from the event-end time.',
-    ruleText: 'Conditional: C3 = Expired; no Unknown option', consumer: 'Legal record of death; death certificate; mortality review' },
+    hint: 'Pronounced by the signing physician. Not taken from the event-end time. PowerForm uses a date/time control; the POC captures time only (no PHI).',
+    ruleText: 'Conditional: C3 = Expired; date/time control; no Unknown option', consumer: 'Legal record of death; death certificate; mortality review' },
 
   { id: 'R5', forms: RRT, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
     label: 'Escalated to Code 99?',
@@ -604,7 +601,7 @@ const FIELDS = [
     ruleText: 'Required; Yes ends the note at escalation', consumer: 'Note; RRT-to-Code 99 escalation reporting; event linking' },
   { id: 'b-esc', forms: RRT, page: 'pg-3', group: 'Outcome', type: 'banner', tone: 'danger',
     show: V => V.R5 === 'yes',
-    html: () => 'The RRT note ends at escalation: <strong>"Escalated to Code 99 — see Code 99 Note – Physician."</strong> Response, disposition and plan are documented on the Code 99 note. <button class="btn btn--sm btn--primary" type="button" data-action="escalate">Start Code 99 Note &rsaquo;</button>' },
+    html: () => 'The RRT note ends at escalation: <strong>"Escalated to Code 99 — see Code 99 Note – Physician."</strong> Complete a separate Code 99 Note – Physician; response, disposition and plan are documented there.' },
   { id: 'R4', forms: RRT, page: 'pg-3', group: 'Outcome', type: 'radio', req: true,
     label: 'Response to interventions',
     options: [{ v: 'improved', t: 'Improved' }, { v: 'stabilized', t: 'Stabilized' }, { v: 'unchanged', t: 'Unchanged' }, { v: 'worse', t: 'Worse' }],
@@ -614,10 +611,10 @@ const FIELDS = [
   { id: 'S7', forms: BOTH, page: 'pg-3', group: 'Disposition & plan', type: 'radio', req: true,
     label: 'Disposition',
     options: {
-      c99: [{ v: 'icu', t: 'ICU' }, { v: 'stay-icu', t: 'Remained in ICU / critical care' }, { v: 'tele', t: 'Telemetry / step-down' },
+      c99: [{ v: 'icu', t: 'ICU' }, { v: 'stay-icu', t: 'Remained in ICU / critical care' }, { v: 'tele', t: 'Telemetry' },
         { v: 'stay', t: 'Remained on current unit' }, { v: 'proc', t: 'Procedure (cath lab / IR / OR)' },
         { v: 'xfer', t: 'Transfer to another facility' }, { v: 'other', t: 'Other', other: true }],
-      rrt: [{ v: 'stay', t: 'Remain on current unit' }, { v: 'tele', t: 'Telemetry / step-down' }, { v: 'icu', t: 'ICU' },
+      rrt: [{ v: 'stay', t: 'Remain on current unit' }, { v: 'tele', t: 'Telemetry' }, { v: 'icu', t: 'ICU' },
         { v: 'proc', t: 'Procedure' }, { v: 'comfort', t: 'Comfort care' }, { v: 'other', t: 'Other', other: true }] },
     show: isSurvivedPath,
     hint: 'Selecting a disposition does not create a transfer or admission order.',
@@ -659,7 +656,7 @@ const FIELD_BY_ID = Object.fromEntries(FIELDS.map(f => [f.id, f]));
 
 const DEMO = {
   c99: {
-    CTX: '14:32', S2: 'tl-res', C1: 'cardiac', S3: 'full', S4: 'yes',
+    CTX: '14:32', S2: 'tl-res', C1: 'cardiac', S3: 'full',
     C2: ['cpr-man', 'defib', 'meds', 'airway'],
     S5: 'Found pulseless by unit staff; CPR in progress on arrival. Initial shockable rhythm; two shocks and one dose of epinephrine with ROSC after the second shock. Intubated after ROSC for airway protection.',
     S6: 'VF arrest, suspected ischemic cause. Hyperkalemia and hypoxia considered; electrolytes pending.',
@@ -669,7 +666,7 @@ const DEMO = {
     S12: 'notified', 'S13.name': 'Spouse (demo)', 'S13.time': '15:10',
   },
   rrt: {
-    CTX: '11:02', S2: 'resp-res', R1: ['sbp', 'ms'], S3: 'full', S4: 'yes',
+    CTX: '11:02', S2: 'resp-res', R1: ['sbp', 'ms'], S3: 'full',
     R2: ['ecg', 'labs', 'fluid'],
     S5: 'Lethargic but arousable, oriented to self. SBP in the low 80s from a baseline in the 120s, HR 118, extremities warm. Lungs clear. No focal neurologic deficit.',
     S6: 'Hypotension, likely hypovolemia versus early sepsis. Differential includes GI bleed.',
@@ -846,7 +843,7 @@ function renderForm() {
   document.querySelectorAll('[data-form-badge]').forEach(b => { b.textContent = meta.title; });
   document.querySelectorAll('[data-hdr]').forEach(h => h.classList.toggle('section-hdr--rrt', state.form === 'rrt'));
   getEl('nav-form-hdr').textContent = meta.title;
-  getEl('tb-title').textContent = meta.title + ' — POC v0.1';
+  getEl('tb-title').textContent = meta.title + ' — POC v0.2';
   getEl('sb-form').textContent = meta.title;
   getEl('btn-demo').classList.remove('hidden');
   getEl('mode-note').classList.remove('hidden');
@@ -975,13 +972,12 @@ function pushSection(L, heading, lines) {
 
 function codeStatusLine() {
   if (!val('S3')) return '';
-  const check = { yes: 'matches the active order', disc: 'discrepancy with the active order identified and addressed', unable: 'unable to verify against the active order' }[val('S4')];
-  return 'Code status at time of event: ' + optionText('S3') + (check ? ' (' + check + ').' : '.');
+  return 'Code status at time of event: ' + optionText('S3') + '.';
 }
 
 function headerLines(meta) {
   const L = [meta.noteTitle, '-'.repeat(meta.noteTitle.length)];
-  L.push('Event time (Performed on): ' + (state.vals.CTX || '—') + '   [date auto-populated]');
+  L.push('Event start time: ' + (state.vals.CTX || '—') + '   [date auto-populated]');
   L.push('Location: ' + (val('S1') ? optionText('S1') : 'Patient\'s assigned unit [auto]'));
   L.push('Author: [signing physician, auto]' + (val('S2') ? ' — ' + optionText('S2') : ''));
   const cs = codeStatusLine();
@@ -997,7 +993,7 @@ function outcomeLinesC99() {
   }
   if (o === 'expired') {
     return ['Resuscitation stopped. Reason: ' + (optionText('C6') || '—') + '.',
-      'Time of death pronounced: ' + (state.vals.C7 || '—') + ', by the signing physician.'];
+      'Date/time of death pronounced: [date] ' + (state.vals.C7 || '—') + ', by the signing physician.'];
   }
   if (o === 'stabilized') return ['Stabilized; no cardiopulmonary arrest occurred.'];
   return [];
@@ -1074,12 +1070,12 @@ const CONTROL_NAMES = { radio: 'Single select (alpha)', check: 'Multi select (al
 
 function mapText() {
   const L = []; const hr = '='.repeat(78);
-  L.push('CODE 99 / RRT PHYSICIAN POWERFORMS — BUILD MAP (POC v0.1, committee-confirmed design)');
+  L.push('CODE 99 / RRT PHYSICIAN POWERFORMS — BUILD MAP (POC v0.2)');
   L.push(hr);
   L.push('Forms: "Code 99 Note – Physician" and "RRT Note – Physician". Three sections each:');
   L.push('  1. Event & Code Status   2. Assessment & Interventions   3. Outcome, Plan & Communication');
-  L.push('Field count: Code 99 = 13 shared + 7 = 20; RRT = 13 shared + 5 = 18 (CTX is the native Performed On).');
-  L.push('Build shared fields once (S1-S13) and reuse in both forms. Reuse existing DTAs before creating new ones.');
+  L.push('Field count: Code 99 = 12 shared + 7 = 19; RRT = 12 shared + 5 = 17 (CTX = event start time, native Performed On; S4 removed 11/2026).');
+  L.push('Build shared fields once (S1-S3, S5-S13) and reuse in both forms. Reuse existing DTAs before creating new ones.');
   L.push('');
   const groups = [['SHARED FIELDS (both forms)', f => f.forms.length === 2], ['CODE 99 FIELDS', f => f.forms.length === 1 && f.forms[0] === 'c99'], ['RRT FIELDS', f => f.forms.length === 1 && f.forms[0] === 'rrt']];
   groups.forEach(([title, pred]) => {
@@ -1102,7 +1098,7 @@ function mapText() {
     'C3 = ROSC          -> show C4, C5, S7, S9 (S8 if S7 is a transfer)',
     'C3 = Expired       -> show C6, C7; hide S7-S9',
     'C3 = Stabilized    -> show S7, S9 (S8 if transfer)',
-    'R5 = Yes           -> hide R4, S7-S9; note ends "Escalated to Code 99 — see Code 99 note"',
+    'R5 = Yes           -> hide R4, S7-S9; note ends "Escalated to Code 99 — see Code 99 note" (no carry-over; provider completes the Code 99 note)',
     'R5 = No            -> show R4, S7, S9 (S8 if transfer)',
     'S7 in ICU / Telemetry / Procedure / Transfer -> show S8 (required)',
     'S10 = Notified     -> show S11;  S12 = Notified -> show S13',
@@ -1116,7 +1112,7 @@ function mapText() {
   L.push('-----------');
   [
     'Performed On = event time; signature time is separate and automatic (42 CFR 482.24(c)).',
-    'No defaulted clinical values; S4 code-status check is never pre-selected.',
+    'No defaulted clinical values; code status (S3) is never pre-selected and includes Unknown.',
     'No automatic attestations (e.g., "per ACLS protocol").',
     'Disposition does not create orders; the form places no orders.',
     'Draft, sign, co-sign (resident authors), modify/unchart through native workflow.',
@@ -1128,7 +1124,7 @@ function mapText() {
 
 function xwalkText() {
   const L = []; const hr = '='.repeat(78);
-  L.push('DATA OWNERSHIP CROSSWALK & COMMITTEE DECISIONS (POC v0.1)');
+  L.push('DATA OWNERSHIP CROSSWALK & DESIGN NOTES (POC v0.2)');
   L.push(hr);
   L.push('Rule: one owner per data element. If the Recording Nurse, RRT Flow Sheet or iView records it,');
   L.push('the physician form references it instead of re-entering it.');
@@ -1138,35 +1134,28 @@ function xwalkText() {
     ['Initial condition and rhythm', 'Recording Nurse -> Resuscitation Record', 'Not entered'],
     ['Medications, doses, shocks, rhythm checks', 'Resuscitation Record; MAR', 'C2 summary checklist only (optional)'],
     ['Vital signs (initial, repeat, post-ROSC)', 'iView; RRT Flow Sheet', 'Not entered; key values in S5 text'],
-    ['RRT activation criteria', 'RRT Flow Sheet (to be aligned to policy)', 'R1 uses the policy\'s 12 criteria'],
+    ['RRT activation criteria', 'RRT Flow Sheet (same list)', 'R1 uses 12 common criteria'],
     ['Team roles, compressors, attendees', 'Resuscitation Record', 'S2 author role only'],
-    ['Debrief', 'Debriefing for Resuscitation Event form', 'Excluded'],
+    ['Debrief', 'Debrief form', 'Excluded'],
     ['Intubation, IO, central line', 'Procedure notes', 'C2 checkbox flags procedure note'],
-    ['Reason resuscitation stopped', 'Resuscitation Record (same 3 values)', 'C6 — Team Leader decision (policy)'],
-    ['Time of death pronounced', 'Physician', 'C7'],
-    ['Immediate post-cardiac arrest assessment', 'Physician (moves from Resuscitation Record box)', 'C4, C5 + S5'],
+    ['Reason resuscitation stopped', 'Resuscitation Record (same 3 values)', 'C6 — Team Leader decision'],
+    ['Date/time of death pronounced', 'Physician', 'C7'],
+    ['Immediate post-cardiac arrest assessment', 'Physician (not a nursing free-text box)', 'C4, C5 + S5'],
     ['Attending / family notification', 'Both (DECISION 2)', 'S10-S13: who and what; nurse records that/when'],
-    ['Disposition', 'Team Leader decides (policy); nurse records', 'S7, S8'],
+    ['Disposition', 'Team Leader decides; nurse records', 'S7, S8'],
     ['Orders', 'CPOE', 'Never created by the form'],
   ].forEach(r => { L.push('- ' + r[0]); L.push('    Owner:          ' + r[1]); L.push('    Physician form: ' + r[2]); });
   L.push('');
-  L.push('GAPS FOR NURSING FORMS (outside the physician form)');
-  L.push('---------------------------------------------------');
+  L.push('DESIGN NOTES FOR ADOPTING ORGANIZATIONS');
+  L.push('---------------------------------------');
   [
-    'RRT Flow Sheet criteria do not match policy (flow sheet has sepsis screen and urine output; policy has chest pain, stroke symptoms, mental status, work of breathing).',
-    'Resuscitation Record compressions = None / Manual only; add Mechanical (LUCAS).',
-    'Policy has no physician documentation section.',
-    'Policy covers visitors and staff; a PowerForm needs a patient encounter (out of scope unless registered, e.g., via ED).',
-  ].forEach((x, i) => L.push('  ' + (i + 1) + '. ' + x));
-  L.push('');
-  L.push('COMMITTEE DECISIONS');
-  L.push('-------------------');
-  [
-    'Add a Physician Documentation section to the policy (author, timeframe, co-signature).',
-    'Notification overlap: nurse records that/when; physician records who/what. Drop from nursing build when iView replaces paper.',
-    'Update RRT Flow Sheet criteria to the policy\'s 12; add LUCAS to the Resuscitation Record / iView.',
-    'Resuscitation Record "Immediate Post Cardiac Arrest Assessment" box: point to physician note, or remove in iView.',
-    'Medsys: PowerForm -> Code 99 Note / RRT Note document type (Dynamic Documentation) for Progress Notes filing and co-sign routing.',
+    'Put physician documentation in the Code 99 / RRT policy: who completes each note, timeframe, co-signature for residents.',
+    'One owner per data element; for notification, nurse records that/when, physician records who/what.',
+    'Use the same RRT criteria (R1) and stop-resuscitation reasons (C6) on nursing and physician forms.',
+    'Offer mechanical CPR (e.g., LUCAS) on the nursing resuscitation record.',
+    'Decide whether the physician note replaces any free-text post-arrest assessment box on the nursing record.',
+    'Confirm PowerForm -> Code 99 Note / RRT Note document type (Dynamic Documentation) with your build team.',
+    'Visitor and staff events need a patient encounter; out of scope unless registered.',
   ].forEach((x, i) => L.push('  ' + (i + 1) + '. ' + x));
   return L.join('\n');
 }
@@ -1272,7 +1261,7 @@ function resetApplication() {
   });
   FORM_PAGES.forEach(p => { getEl('ct-' + p).textContent = ''; });
   getEl('nav-form-hdr').textContent = 'PowerForm';
-  getEl('tb-title').textContent = 'Code 99 / RRT Physician PowerForms — POC v0.1';
+  getEl('tb-title').textContent = 'Code 99 / RRT Physician PowerForms — POC v0.2';
   getEl('sb-form').textContent = 'No form open';
   getEl('sb-miss-wrap').classList.add('hidden');
   ['btn-demo', 'btn-gen'].forEach(id => getEl(id).classList.add('hidden'));
@@ -1300,13 +1289,6 @@ function signNote() {
   refresh();
   const cosign = RESIDENT_ROLES.includes(state.vals.S2) ? ' Routed for co-signature.' : '';
   showToast('Signed (simulated).' + cosign);
-}
-
-function escalateToCode99() {
-  const carry = {};
-  ['S1', 'S1.other', 'S2', 'S3', 'S3.other', 'S4'].forEach(k => { if (state.vals[k] !== undefined) carry[k] = state.vals[k]; });
-  startForm('c99', carry);
-  showToast('Code 99 note started — location, role and code status carried over');
 }
 
 function loadDemo() {
@@ -1346,7 +1328,6 @@ const ACTIONS = {
   'sign': signNote,
   'set-mode': t => { state.outputMode = t.dataset.mode; generateOutput(); },
   'back-to-form': () => navigateToPage('pg-3'),
-  'escalate': escalateToCode99,
   'load-demo': loadDemo,
   'print': () => window.print(),
   'copy-output': copyOutput,
